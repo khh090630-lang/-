@@ -24,30 +24,43 @@
         button.action-btn { width: 100%; padding: 12px; background: #2ecc71; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; }
         button.action-btn:hover { background: #27ae60; }
         
-        /* 학습지 출력 UI (투트랙 테이블 방식) */
+        /* 학습지 출력 UI */
         .worksheet-output { margin-top: 20px; border-top: 2px dashed #ccc; padding-top: 20px; }
         .worksheet-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; table-layout: fixed; }
         .worksheet-table td { border: 1px solid #ccc; padding: 12px 10px; font-size: 15px; vertical-align: middle; word-wrap: break-word; }
         .worksheet-table .q-cell { width: 25%; font-weight: 500; background-color: #fafafa; }
         .worksheet-table .a-cell { width: 25%; }
-        .worksheet-table tr { page-break-inside: avoid; } /* 페이지 넘어갈 때 행 잘림 방지 */
+        .worksheet-table tr { page-break-inside: avoid; } 
 
         /* 답지 UI */
         .answer-key { margin-top: 40px; padding-top: 20px; border-top: 2px solid #2c3e50; page-break-before: always; }
         .answer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-bottom: 20px; }
         .answer-item { font-size: 14px; background: #f9f9f9; padding: 8px; border-radius: 4px; border: 1px solid #eee; page-break-inside: avoid; }
 
-        /* 모달(팝업) 배경 및 본문 */
+        /* 모달(팝업) 배경 및 본문 - 스크롤 구조 개편 */
         .modal { display: none; position: fixed; z-index: 10; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-        .modal-content { background-color: #fff; margin: 10% auto; padding: 20px 30px; border-radius: 12px; width: 80%; max-width: 700px; max-height: 80vh; overflow-y: auto; position: relative; }
-        .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .modal-content { 
+            background-color: #fff; margin: 3% auto; padding: 20px 30px; 
+            border-radius: 12px; width: 80%; max-width: 700px; 
+            height: 85vh; /* 높이 고정 */
+            display: flex; flex-direction: column; /* 내부 요소 분리를 위한 플렉스 박스 */
+            position: relative; 
+        }
+        
+        /* X 버튼 위치 절대값 고정 */
+        .close-btn { position: absolute; top: 15px; right: 20px; color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; z-index: 100; }
         .close-btn:hover { color: #333; }
-        .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        
+        .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; padding-right: 30px; }
 
-        /* 단어 목록 테이블 */
+        /* 단어 목록 테이블 영역만 따로 스크롤되도록 분리 */
+        #wordListContainer { overflow-y: auto; flex-grow: 1; padding-right: 5px; }
+        #wordListContainer::-webkit-scrollbar { width: 6px; }
+        #wordListContainer::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+
         .word-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
         .word-table th, .word-table td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        .word-table th { background-color: #f4f7f6; }
+        .word-table th { background-color: #f4f7f6; position: sticky; top: 0; z-index: 2; } /* 테이블 헤더도 고정 */
         .word-table input { padding: 5px; width: 90%; margin: 0; }
 
         /* 작은 관리 버튼들 */
@@ -56,9 +69,11 @@
         .btn-delete { background-color: #e74c3c; color: white; }
         .btn-save { background-color: #2ecc71; color: white; }
         
-        /* 모달 내 개별 단어 추가 영역 */
-        .insert-row { display: flex; gap: 8px; background: #fef9e7; padding: 10px; border-radius: 6px; margin-bottom: 15px; align-items: center; }
+        /* 모달 내 개별 단어 추가 및 삭제 영역 */
+        .insert-row { display: flex; gap: 8px; padding: 10px; border-radius: 6px; margin-bottom: 10px; align-items: center; }
         .insert-row input { margin: 0; padding: 8px; }
+        .bg-add { background: #fef9e7; }
+        .bg-del { background: #fdedec; }
     </style>
 </head>
 <body>
@@ -110,12 +125,12 @@
     </div>
 </div>
 
-<!-- 4. 단어 상세 관리 모달 -->
+<!-- 4. 단어 상세 관리 모달 (고정 헤더 + 스크롤 컨텐츠) -->
 <div id="folderModal" class="modal">
     <div class="modal-content">
         <span class="close-btn" onclick="closeModal()">&times;</span>
         
-        <!-- 폴더 관리 헤더 -->
+        <!-- 폴더 관리 헤더 (스크롤 시 고정됨) -->
         <div class="modal-header">
             <h2 id="modalTitle" style="margin: 0; color: #2c3e50;">폴더 이름</h2>
             <div>
@@ -125,15 +140,26 @@
         </div>
 
         <!-- 특정 위치(번호)에 단어 추가하기 -->
-        <div class="insert-row">
+        <div class="insert-row bg-add">
+            <span style="font-size: 13px; font-weight: bold; color: #f39c12; width: 15%; text-align: center;">단어 삽입</span>
             <input type="number" id="insertId" placeholder="번호(선택)" style="width: 20%;">
-            <input type="text" id="insertEn" placeholder="영단어 입력" style="width: 35%;">
-            <input type="text" id="insertKo" placeholder="뜻 입력" style="width: 35%;">
-            <button class="btn-small btn-save" onclick="insertWord()" style="width: 10%; padding: 8px;">추가</button>
+            <input type="text" id="insertEn" placeholder="영단어 입력" style="width: 25%;">
+            <input type="text" id="insertKo" placeholder="뜻 입력" style="width: 25%;">
+            <button class="btn-small btn-save" onclick="insertWord()" style="width: 15%; padding: 8px;">추가</button>
         </div>
 
+        <!-- 특정 구간 단어 일괄 삭제 -->
+        <div class="insert-row bg-del">
+            <span style="font-size: 13px; font-weight: bold; color: #c0392b; width: 15%; text-align: center;">구간 삭제</span>
+            <input type="number" id="delStartId" placeholder="시작 번호" style="width: 35%;">
+            <span style="font-weight: bold; color: #555;">~</span>
+            <input type="number" id="delEndId" placeholder="끝 번호" style="width: 35%;">
+            <button class="btn-small btn-delete" onclick="bulkDeleteWords()" style="width: 15%; padding: 8px;">일괄 삭제</button>
+        </div>
+
+        <!-- 단어 목록 스크롤 영역 -->
         <div id="wordListContainer">
-            <!-- 단어 목록 테이블 -->
+            <!-- 단어 목록 테이블이 여기에 생성됨 -->
         </div>
     </div>
 </div>
@@ -142,7 +168,7 @@
     // ----------------- 환경 설정 ----------------- //
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby3YhnuJOAyDY9YH0AJQHQ1nVmZkBmfE0UNTXHke8DfKZ52oonKi9RzYEUtn9x3AYlW/exec'; 
     let db = {};
-    let currentFolder = ''; // 현재 열려있는 폴더 이름 추적
+    let currentFolder = ''; 
 
     // ----------------- 데이터 로드/저장 ----------------- //
     async function loadDB() {
@@ -194,7 +220,6 @@
         renderFolders();
     }
 
-    // ----------------- 탭 및 기본 UI ----------------- //
     function switchTab(tabId) {
         document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -216,7 +241,6 @@
         });
     }
 
-    // ----------------- 폴더 관리 로직 ----------------- //
     function createFolder() {
         const name = prompt("새로운 단어장 이름을 입력하세요:");
         if (name && !db[name]) {
@@ -240,7 +264,6 @@
         }
     }
 
-    // 폴더 이름 수정 기능
     function editFolderName() {
         const newName = prompt("새로운 폴더 이름을 입력하세요:", currentFolder);
         if (!newName || newName.trim() === "" || newName === currentFolder) return;
@@ -249,12 +272,10 @@
             alert("이미 존재하는 단어장 이름입니다.");
             return;
         }
-
-        // 기존 데이터 백업 후 키 변경
         db[newName] = db[currentFolder];
         delete db[currentFolder];
         
-        currentFolder = newName; // 현재 폴더명 업데이트
+        currentFolder = newName; 
         document.getElementById('modalTitle').innerText = newName;
         
         saveDB();
@@ -262,7 +283,6 @@
         updateFolderSelects();
     }
 
-    // 폴더 삭제 기능
     function deleteFolder() {
         if (confirm(`정말 '${currentFolder}' 단어장을 삭제할까요?\n(안에 있는 모든 단어가 영구적으로 지워집니다)`)) {
             delete db[currentFolder];
@@ -272,7 +292,6 @@
         }
     }
 
-    // ----------------- 단어 등록 로직 (번호 자동 밀어내기 Shift 적용) ----------------- //
     function saveWords() {
         const folder = document.getElementById('folderSelect').value;
         const text = document.getElementById('wordInput').value;
@@ -285,10 +304,8 @@
 
         lines.forEach(line => {
             if (!line.trim()) return;
-
             const parts = line.trim().split(/\t|\s{2,}/);
             
-            // 사용자가 번호를 맨 앞에 직접 입력한 경우
             if (parts.length >= 3 && !isNaN(parseInt(parts[0]))) {
                 const id = parseInt(parts[0]);
                 const en = parts[1].trim();
@@ -296,23 +313,18 @@
 
                 const existingIndex = db[folder].findIndex(w => w.id === id);
                 if (existingIndex > -1) {
-                    // 동일한 번호가 있으면, 그 번호 포함 뒤에 있는 단어들을 1씩 밀어냄 (Shift)
                     db[folder].forEach(w => {
-                        if (w.id >= id) {
-                            w.id += 1;
-                        }
+                        if (w.id >= id) w.id += 1;
                     });
                 }
                 db[folder].push({id, en, ko});
                 count++;
             } 
-            // 번호를 생략하고 입력한 경우 (가장 뒷 번호로 자동 배정)
             else if (parts.length >= 2) {
                 const en = parts[0].trim();
                 const ko = parts.slice(1).join(' ').trim();
                 
                 let nextId = db[folder].length > 0 ? Math.max(...db[folder].map(w => w.id)) + 1 : 1;
-                
                 db[folder].push({id: nextId, en: en, ko: ko});
                 count++;
             }
@@ -328,7 +340,6 @@
         }
     }
 
-    // ----------------- 모달 및 수정/삭제/개별추가 로직 ----------------- //
     function openFolderDetail(folderName) {
         currentFolder = folderName;
         document.getElementById('modalTitle').innerText = folderName;
@@ -341,29 +352,23 @@
         renderFolders();
     }
 
-    // 모달 창 안에서 특정 위치(번호)에 단어 1개 즉시 추가 (번호 밀어내기 Shift 적용)
+    // 모달 창 내 개별 추가 (Shift 기능)
     function insertWord() {
         const idVal = document.getElementById('insertId').value;
         const enVal = document.getElementById('insertEn').value;
         const koVal = document.getElementById('insertKo').value;
         
-        if (!enVal.trim() || !koVal.trim()) {
-            return alert("영단어와 뜻을 모두 입력해주세요.");
-        }
+        if (!enVal.trim() || !koVal.trim()) return alert("영단어와 뜻을 모두 입력해주세요.");
         
         let newId = parseInt(idVal);
         if (isNaN(newId)) {
-            // 번호를 안 적었으면 가장 뒷 번호로 자동 배정
             newId = db[currentFolder].length > 0 ? Math.max(...db[currentFolder].map(w => w.id)) + 1 : 1;
             db[currentFolder].push({ id: newId, en: enVal.trim(), ko: koVal.trim() });
         } else {
-            // 번호를 적었을 경우: 해당 번호부터 뒤로 1씩 밀어내기 (Shift)
             const existingIndex = db[currentFolder].findIndex(w => w.id === newId);
             if (existingIndex > -1) {
                 db[currentFolder].forEach(w => {
-                    if (w.id >= newId) {
-                        w.id += 1;
-                    }
+                    if (w.id >= newId) w.id += 1;
                 });
             }
             db[currentFolder].push({ id: newId, en: enVal.trim(), ko: koVal.trim() });
@@ -372,10 +377,48 @@
         saveDB();
         renderWordList(currentFolder);
         
-        // 입력창 비우기
         document.getElementById('insertId').value = '';
         document.getElementById('insertEn').value = '';
         document.getElementById('insertKo').value = '';
+    }
+
+    // ★ NEW: 구간 일괄 삭제 기능 (Shift 당겨오기 적용) ★
+    function bulkDeleteWords() {
+        const startStr = document.getElementById('delStartId').value;
+        const endStr = document.getElementById('delEndId').value;
+        
+        if (!startStr || !endStr) return alert("삭제할 시작 번호와 끝 번호를 모두 입력해주세요.");
+        
+        const startId = parseInt(startStr);
+        const endId = parseInt(endStr);
+        
+        if (startId > endId) return alert("시작 번호가 끝 번호보다 클 수 없습니다.");
+        
+        // 삭제할 단어 개수 파악
+        const wordsToDelete = db[currentFolder].filter(w => w.id >= startId && w.id <= endId);
+        const deleteCount = wordsToDelete.length;
+        
+        if (deleteCount === 0) return alert("해당 구간에 삭제할 단어가 없습니다.");
+        
+        if(confirm(`${startId}번부터 ${endId}번까지 총 ${deleteCount}개의 단어를 삭제하시겠습니까?\n(삭제 후 뒷번호 단어들이 앞으로 자동으로 당겨집니다)`)) {
+            
+            // 1. 해당 구간의 단어들 삭제
+            db[currentFolder] = db[currentFolder].filter(w => w.id < startId || w.id > endId);
+            
+            // 2. 삭제된 구간보다 뒤에 있는(번호가 큰) 단어들의 번호를 삭제된 개수(deleteCount)만큼 줄임
+            db[currentFolder].forEach(w => {
+                if (w.id > endId) {
+                    w.id -= deleteCount;
+                }
+            });
+
+            saveDB();
+            renderWordList(currentFolder);
+            
+            // 입력창 비우기
+            document.getElementById('delStartId').value = '';
+            document.getElementById('delEndId').value = '';
+        }
     }
 
     function renderWordList(folderName) {
@@ -387,7 +430,6 @@
             return;
         }
 
-        // 출력할 때 번호 순으로 정렬
         words.sort((a, b) => a.id - b.id);
 
         let html = '<table class="word-table">';
@@ -408,13 +450,11 @@
         container.innerHTML = html;
     }
 
-    // 번호 당겨오기 (Shift Down) 삭제 기능
+    // 개별 삭제 (Shift 당겨오기 적용)
     function deleteWord(folderName, id) {
         if(confirm(`${id}번 단어를 정말로 삭제할까요?\n(삭제 후 뒷번호 단어들이 앞으로 한 칸씩 당겨집니다)`)) {
-            // 1. 해당 단어 삭제
             db[folderName] = db[folderName].filter(w => w.id !== id);
             
-            // 2. 삭제된 단어보다 뒤에 있는(번호가 큰) 단어들의 번호를 1씩 줄임
             db[folderName].forEach(w => {
                 if (w.id > id) {
                     w.id -= 1;
@@ -491,17 +531,14 @@
     function renderWorksheet(enToKo, koToEn) {
         const output = document.getElementById('worksheetOutput');
         
-        // 문제지 영역 (상단 여백 최소화)
         let html = '<div id="pdf-content" style="background: white;">';
         html += '<h2 style="text-align:center; margin: 5px 0 20px 0;">📝 단어 학습지</h2>';
         
         let globalQNum = 1; 
         let globalAnsNum = 1; 
 
-        // 정답지 HTML 변수 분리
         let answerHtml = '<div class="answer-key"><h2 style="text-align:center; margin-top: 0;">✅ 정답지</h2>';
 
-        // 2단 표 생성 함수
         function buildTableHTML(questions, type) {
             if (questions.length === 0) return '';
             let tHtml = '<table class="worksheet-table">';
@@ -561,11 +598,8 @@
         output.innerHTML = html;
     }
 
-    // ----------------- PDF 다운로드 기능 (스크롤 버그 해결) ----------------- //
     function downloadPDF() {
-        // 스크롤이 내려가 있을 때 캡처하면 상단 공백이 생기는 버그 방지
         window.scrollTo(0, 0); 
-
         const element = document.getElementById('pdf-content');
         
         const opt = {
@@ -580,7 +614,6 @@
         html2pdf().set(opt).from(element).save();
     }
 
-    // 초기 실행
     loadDB();
 </script>
 </body>

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>나만의 단어장 & 학습지 생성기</title>
+    <style>
+        body { font-family: 'Pretendard', sans-serif; background: #f4f7f6; padding: 20px; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; text-align: center; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { flex: 1; padding: 10px; border: none; background: #e0e6ed; cursor: pointer; border-radius: 6px; font-weight: bold; }
+        .tab-btn.active { background: #3498db; color: white; }
+        .section { display: none; }
+        .section.active { display: block; }
+        
+        /* 폴더 UI */
+        .folder-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
+        .folder { background: #f1c40f; padding: 20px; border-radius: 8px 8px 8px 8px; text-align: center; cursor: pointer; position: relative; font-weight: bold; color: #333; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .folder::before { content: ''; position: absolute; top: -10px; left: 0; width: 40%; height: 10px; background: #f1c40f; border-radius: 8px 8px 0 0; }
+        
+        textarea, input, select { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; }
+        button.action-btn { width: 100%; padding: 12px; background: #2ecc71; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; }
+        button.action-btn:hover { background: #27ae60; }
+        
+        /* 학습지 출력 UI */
+        .worksheet-output { margin-top: 20px; border-top: 2px dashed #ccc; padding-top: 20px; }
+        .question-item { margin-bottom: 15px; font-size: 16px; display: flex; align-items: center;}
+        .blank { display: inline-block; width: 200px; border-bottom: 1px solid #000; margin-left: 10px; }
+
+        /* 모달(팝업) 배경 및 본문 */
+        .modal { display: none; position: fixed; z-index: 10; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fff; margin: 10% auto; padding: 20px 30px; border-radius: 12px; width: 80%; max-width: 600px; max-height: 70vh; overflow-y: auto; position: relative; }
+        .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close-btn:hover { color: #333; }
+
+        /* 단어 목록 테이블 */
+        .word-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .word-table th, .word-table td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        .word-table th { background-color: #f4f7f6; }
+        .word-table input { padding: 5px; width: 90%; margin: 0; }
+
+        /* 작은 관리 버튼들 */
+        .btn-small { padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; margin-right: 4px; }
+        .btn-edit { background-color: #f39c12; color: white; }
+        .btn-delete { background-color: #e74c3c; color: white; }
+        .btn-save { background-color: #2ecc71; color: white; }
+
+        /* === PDF 저장 (인쇄) 전용 스타일 === */
+        @media print {
+            /* 브라우저 여백 초기화 및 배경 흰색 */
+            body { background: white; padding: 0; }
+            .container { box-shadow: none; padding: 0; max-width: 100%; margin: 0; }
+            
+            /* 불필요한 UI 요소 전부 숨기기 */
+            h1, .tabs, #folders, #addWords, #testFolderSelect, 
+            #startNum, #endNum, #enToKoCount, #koToEnCount, 
+            .action-btn, #createTest h3:first-child { 
+                display: none !important; 
+            }
+            
+            /* 학습지 영역만 표시되도록 설정 */
+            #createTest { display: block !important; }
+            .worksheet-output { border-top: none; margin-top: 0; padding-top: 0; }
+            
+            /* 문제 사이 여백 및 페이지 넘김 방지 */
+            .question-item { page-break-inside: avoid; margin-bottom: 20px; font-size: 18px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>단어장 & 학습지 생성기</h1>
+    
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('folders')">단어장 폴더</button>
+        <button class="tab-btn" onclick="switchTab('addWords')">단어 등록</button>
+        <button class="tab-btn" onclick="switchTab('createTest')">학습지 생성</button>
+    </div>
+
+    <!-- 1. 단어장 폴더 섹션 -->
+    <div id="folders" class="section active">
+        <h3>내 단어장</h3>
+        <button onclick="createFolder()" style="margin-bottom:15px; padding: 8px; border-radius: 6px; cursor: pointer;">+ 새 폴더 생성</button>
+        <div class="folder-grid" id="folderContainer"></div>
+    </div>
+
+    <!-- 2. 단어 등록 섹션 -->
+    <div id="addWords" class="section">
+        <h3>단어 일괄 등록</h3>
+        <select id="folderSelect"><option value="">단어장을 선택하세요</option></select>
+        <textarea id="wordInput" rows="10" placeholder="번호   영단어   뜻&#10;1   advent   도래, 출현&#10;2   arise   발생하다"></textarea>
+        <button class="action-btn" onclick="saveWords()">단어 등록하기</button>
+    </div>
+
+    <!-- 3. 학습지 생성 섹션 -->
+    <div id="createTest" class="section">
+        <h3>학습지 생성 조건</h3>
+        <select id="testFolderSelect"><option value="">단어장을 선택하세요</option></select>
+        <div style="display: flex; gap: 10px;">
+            <input type="number" id="startNum" placeholder="시작 번호 (예: 1)">
+            <input type="number" id="endNum" placeholder="끝 번호 (예: 55)">
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <input type="number" id="enToKoCount" placeholder="영->한 문제 수 (예: 5)">
+            <input type="number" id="koToEnCount" placeholder="한->영 문제 수 (예: 5)">
+        </div>
+        
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button class="action-btn" onclick="generateTest()">학습지 만들기</button>
+            <button class="action-btn" id="printBtn" style="display: none; background: #34495e;" onclick="window.print()">PDF로 저장 (인쇄)</button>
+        </div>
+
+        <div id="worksheetOutput" class="worksheet-output"></div>
+    </div>
+</div>
+
+<!-- 4. 단어 상세 관리 모달 -->
+<div id="folderModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <h2 id="modalTitle">폴더 이름</h2>
+        <div id="wordListContainer">
+            <!-- 단어 목록 테이블 -->
+        </div>
+    </div>
+</div>
+
+<script>
+    // ----------------- 환경 설정 ----------------- //
+    // 이곳에 Google Apps Script 웹 앱 URL을 붙여넣으세요.
+    // 비워두면 임시로 브라우저(localStorage)에 저장됩니다.
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby3YhnuJOAyDY9YH0AJQHQ1nVmZkBmfE0UNTXHke8DfKZ52oonKi9RzYEUtn9x3AYlW/exec'; 
+    let db = {};
+
+    // ----------------- 데이터 로드/저장 ----------------- //
+    async function loadDB() {
+        if (!SCRIPT_URL) {
+            db = JSON.parse(localStorage.getItem('vocabDB')) || {};
+            initUI();
+            return;
+        }
+        try {
+            const response = await fetch(SCRIPT_URL);
+            db = await response.json();
+            initUI();
+        } catch (error) {
+            console.error('데이터 불러오기 실패. 로컬 스토리지로 대체합니다.', error);
+            db = JSON.parse(localStorage.getItem('vocabDB')) || {};
+            initUI();
+        }
+    }
+
+    async function saveDB() {
+        if (!SCRIPT_URL) {
+            localStorage.setItem('vocabDB', JSON.stringify(db));
+            return;
+        }
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(db)
+            });
+            const result = await response.json();
+            if (!result.success) console.error('시트 저장 실패:', result.error);
+        } catch (error) {
+            console.error('네트워크 에러. 임시로 로컬 스토리지에 저장합니다.', error);
+            localStorage.setItem('vocabDB', JSON.stringify(db));
+        }
+    }
+
+    function initUI() {
+        updateFolderSelects();
+        renderFolders();
+    }
+
+    // ----------------- 탭 및 기본 UI ----------------- //
+    function switchTab(tabId) {
+        document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        event.target.classList.add('active');
+        initUI();
+    }
+
+    function updateFolderSelects() {
+        const selects = ['folderSelect', 'testFolderSelect'];
+        selects.forEach(id => {
+            const el = document.getElementById(id);
+            const currentVal = el.value;
+            el.innerHTML = '<option value="">단어장을 선택하세요</option>';
+            for (let folderName in db) {
+                el.innerHTML += `<option value="${folderName}">${folderName}</option>`;
+            }
+            if(db[currentVal]) el.value = currentVal;
+        });
+    }
+
+    // ----------------- 폴더 관리 로직 ----------------- //
+    function createFolder() {
+        const name = prompt("새로운 단어장 이름을 입력하세요:");
+        if (name && !db[name]) {
+            db[name] = [];
+            saveDB();
+            initUI();
+        } else if (db[name]) {
+            alert("이미 존재하는 단어장입니다.");
+        }
+    }
+
+    function renderFolders() {
+        const container = document.getElementById('folderContainer');
+        container.innerHTML = '';
+        for (let folderName in db) {
+            const div = document.createElement('div');
+            div.className = 'folder';
+            div.innerText = `${folderName}\n(${db[folderName].length}단어)`;
+            div.onclick = () => openFolderDetail(folderName);
+            container.appendChild(div);
+        }
+    }
+
+    // ----------------- 단어 등록 로직 ----------------- //
+    function saveWords() {
+        const folder = document.getElementById('folderSelect').value;
+        const text = document.getElementById('wordInput').value;
+
+        if (!folder) return alert('단어장을 선택하거나 새로 생성해주세요!');
+        if (!text.trim()) return alert('단어를 입력해주세요.');
+
+        const lines = text.split('\n');
+        let count = 0;
+
+        lines.forEach(line => {
+            const parts = line.trim().split(/\s+/);
+            if (parts.length >= 3) {
+                const id = parseInt(parts[0]);
+                const en = parts[1];
+                const ko = parts.slice(2).join(' '); 
+                
+                if (!isNaN(id)) {
+                    const existingIndex = db[folder].findIndex(w => w.id === id);
+                    if (existingIndex > -1) db[folder][existingIndex] = {id, en, ko};
+                    else db[folder].push({id, en, ko});
+                    count++;
+                }
+            }
+        });
+
+        saveDB();
+        alert(`${count}개의 단어가 성공적으로 등록되었습니다!`);
+        document.getElementById('wordInput').value = '';
+        renderFolders();
+    }
+
+    // ----------------- 모달 및 수정/삭제 로직 ----------------- //
+    function openFolderDetail(folderName) {
+        document.getElementById('modalTitle').innerText = folderName;
+        renderWordList(folderName);
+        document.getElementById('folderModal').style.display = 'block';
+    }
+
+    function closeModal() {
+        document.getElementById('folderModal').style.display = 'none';
+        renderFolders();
+    }
+
+    function renderWordList(folderName) {
+        const container = document.getElementById('wordListContainer');
+        const words = db[folderName];
+        
+        if (!words || words.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color:#888;">등록된 단어가 없습니다.</p>';
+            return;
+        }
+
+        words.sort((a, b) => a.id - b.id);
+
+        let html = '<table class="word-table">';
+        html += '<tr><th width="15%">번호</th><th width="35%">영단어</th><th width="35%">뜻</th><th width="15%">관리</th></tr>';
+        
+        words.forEach(w => {
+            html += `<tr id="row-${w.id}">
+                <td>${w.id}</td>
+                <td>${w.en}</td>
+                <td>${w.ko}</td>
+                <td>
+                    <button class="btn-small btn-edit" onclick="editWord('${folderName}', ${w.id})">수정</button>
+                    <button class="btn-small btn-delete" onclick="deleteWord('${folderName}', ${w.id})">삭제</button>
+                </td>
+            </tr>`;
+        });
+        html += '</table>';
+        container.innerHTML = html;
+    }
+
+    function deleteWord(folderName, id) {
+        if(confirm(`${id}번 단어를 정말로 삭제할까요?`)) {
+            db[folderName] = db[folderName].filter(w => w.id !== id);
+            saveDB();
+            renderWordList(folderName);
+        }
+    }
+
+    function editWord(folderName, id) {
+        const row = document.getElementById(`row-${id}`);
+        const word = db[folderName].find(w => w.id === id);
+        
+        row.innerHTML = `
+            <td>${word.id}</td>
+            <td><input type="text" id="edit-en-${id}" value="${word.en}"></td>
+            <td><input type="text" id="edit-ko-${id}" value="${word.ko}"></td>
+            <td>
+                <button class="btn-small btn-save" onclick="saveEdit('${folderName}', ${id})">저장</button>
+                <button class="btn-small" onclick="renderWordList('${folderName}')">취소</button>
+            </td>
+        `;
+    }
+
+    function saveEdit(folderName, id) {
+        const newEn = document.getElementById(`edit-en-${id}`).value;
+        const newKo = document.getElementById(`edit-ko-${id}`).value;
+        
+        if(!newEn.trim() || !newKo.trim()) {
+            alert("영단어와 뜻을 모두 입력해주세요.");
+            return;
+        }
+
+        const index = db[folderName].findIndex(w => w.id === id);
+        if(index > -1) {
+            db[folderName][index].en = newEn;
+            db[folderName][index].ko = newKo;
+            saveDB();
+            renderWordList(folderName);
+        }
+    }
+
+    // ----------------- 학습지 생성 로직 ----------------- //
+    function generateTest() {
+        const folder = document.getElementById('testFolderSelect').value;
+        const start = parseInt(document.getElementById('startNum').value);
+        const end = parseInt(document.getElementById('endNum').value);
+        const enToKo = parseInt(document.getElementById('enToKoCount').value) || 0;
+        const koToEn = parseInt(document.getElementById('koToEnCount').value) || 0;
+
+        document.getElementById('printBtn').style.display = 'none'; // 에러 시 대비하여 버튼 숨김
+
+        if (!folder) return alert('단어장을 선택해주세요.');
+        if (isNaN(start) || isNaN(end)) return alert('출제 범위를 정확히 입력해주세요.');
+
+        const targetWords = db[folder].filter(w => w.id >= start && w.id <= end);
+        const totalQuestions = enToKo + koToEn;
+
+        if (totalQuestions > targetWords.length) {
+            alert(`안내: 출제 문제 수(${totalQuestions}문제)가 출제 범위 개수(${targetWords.length}개)를 넘어섭니다! 범위를 늘리거나 문제 수를 줄여주세요.`);
+            return;
+        }
+
+        const shuffled = [...targetWords].sort(() => 0.5 - Math.random());
+        const enToKoQuestions = shuffled.slice(0, enToKo);
+        const koToEnQuestions = shuffled.slice(enToKo, totalQuestions);
+
+        renderWorksheet(enToKoQuestions, koToEnQuestions);
+        document.getElementById('printBtn').style.display = 'block'; // 학습지 생성 완료 후 버튼 표시
+    }
+
+    function renderWorksheet(enToKo, koToEn) {
+        const output = document.getElementById('worksheetOutput');
+        let html = '<h2>📝 학습지</h2>';
+        let qNum = 1;
+
+        if (enToKo.length > 0) {
+            html += '<h3>Part 1. 영단어를 보고 뜻을 적으세요.</h3>';
+            enToKo.forEach(q => {
+                html += `<div class="question-item">${qNum++}. ${q.en} <span class="blank"></span></div>`;
+            });
+        }
+
+        if (koToEn.length > 0) {
+            html += '<h3>Part 2. 뜻을 보고 영단어를 적으세요.</h3>';
+            koToEn.forEach(q => {
+                html += `<div class="question-item">${qNum++}. ${q.ko} <span class="blank"></span></div>`;
+            });
+        }
+
+        output.innerHTML = html;
+    }
+
+    // 초기 실행
+    loadDB();
+</script>
+</body>
+</html>

@@ -24,17 +24,18 @@
         button.action-btn { width: 100%; padding: 12px; background: #2ecc71; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; }
         button.action-btn:hover { background: #27ae60; }
         
-        /* 학습지 출력 UI */
+        /* 학습지 출력 UI (투트랙 테이블 방식) */
         .worksheet-output { margin-top: 20px; border-top: 2px dashed #ccc; padding-top: 20px; }
         .worksheet-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; table-layout: fixed; }
         .worksheet-table td { border: 1px solid #ccc; padding: 12px 10px; font-size: 15px; vertical-align: middle; word-wrap: break-word; }
         .worksheet-table .q-cell { width: 25%; font-weight: 500; background-color: #fafafa; }
         .worksheet-table .a-cell { width: 25%; }
+        .worksheet-table tr { page-break-inside: avoid; } /* 페이지 넘어갈 때 행 잘림 방지 */
 
         /* 답지 UI */
         .answer-key { margin-top: 40px; padding-top: 20px; border-top: 2px solid #2c3e50; page-break-before: always; }
         .answer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-bottom: 20px; }
-        .answer-item { font-size: 14px; background: #f9f9f9; padding: 8px; border-radius: 4px; border: 1px solid #eee; }
+        .answer-item { font-size: 14px; background: #f9f9f9; padding: 8px; border-radius: 4px; border: 1px solid #eee; page-break-inside: avoid; }
 
         /* 모달(팝업) 배경 및 본문 */
         .modal { display: none; position: fixed; z-index: 10; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
@@ -472,7 +473,7 @@
     function renderWorksheet(enToKo, koToEn) {
         const output = document.getElementById('worksheetOutput');
         
-        // 문제지 영역 (상단 여백 최소화를 위해 래퍼 <div> 자체 마진/패딩 제거, h2 마진 조절)
+        // 문제지 영역 (상단 여백 최소화)
         let html = '<div id="pdf-content" style="background: white;">';
         html += '<h2 style="text-align:center; margin: 5px 0 20px 0;">📝 단어 학습지</h2>';
         
@@ -542,17 +543,18 @@
         output.innerHTML = html;
     }
 
-    // ----------------- PDF 다운로드 기능 ----------------- //
+    // ----------------- PDF 다운로드 기능 (스크롤 버그 해결) ----------------- //
     function downloadPDF() {
         const element = document.getElementById('pdf-content');
         
-        // margin 값을 [Top, Right, Bottom, Left] 배열 형태로 변경하여 상단 여백을 대폭 줄임
         const opt = {
             margin:       [8, 15, 15, 15], 
             filename:     '단어장_학습지.pdf',
             image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            // scrollY: 0 을 추가하여 스크롤을 내린 상태에서 다운받아도 상단 공백이 생기지 않도록 수정
+            html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak:    { mode: ['css', 'legacy'] }
         };
 
         html2pdf().set(opt).from(element).save();

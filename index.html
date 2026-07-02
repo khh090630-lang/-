@@ -408,9 +408,19 @@
         container.innerHTML = html;
     }
 
+    // 번호 당겨오기 (Shift Down) 삭제 기능
     function deleteWord(folderName, id) {
-        if(confirm(`${id}번 단어를 정말로 삭제할까요?`)) {
+        if(confirm(`${id}번 단어를 정말로 삭제할까요?\n(삭제 후 뒷번호 단어들이 앞으로 한 칸씩 당겨집니다)`)) {
+            // 1. 해당 단어 삭제
             db[folderName] = db[folderName].filter(w => w.id !== id);
+            
+            // 2. 삭제된 단어보다 뒤에 있는(번호가 큰) 단어들의 번호를 1씩 줄임
+            db[folderName].forEach(w => {
+                if (w.id > id) {
+                    w.id -= 1;
+                }
+            });
+
             saveDB();
             renderWordList(folderName);
         }

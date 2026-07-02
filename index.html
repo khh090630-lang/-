@@ -47,22 +47,15 @@
 
         /* === PDF 저장 (인쇄) 전용 스타일 === */
         @media print {
-            /* 브라우저 여백 초기화 및 배경 흰색 */
             body { background: white; padding: 0; }
             .container { box-shadow: none; padding: 0; max-width: 100%; margin: 0; }
-            
-            /* 불필요한 UI 요소 전부 숨기기 */
             h1, .tabs, #folders, #addWords, #testFolderSelect, 
             #startNum, #endNum, #enToKoCount, #koToEnCount, 
             .action-btn, #createTest h3:first-child { 
                 display: none !important; 
             }
-            
-            /* 학습지 영역만 표시되도록 설정 */
             #createTest { display: block !important; }
             .worksheet-output { border-top: none; margin-top: 0; padding-top: 0; }
-            
-            /* 문제 사이 여백 및 페이지 넘김 방지 */
             .question-item { page-break-inside: avoid; margin-bottom: 20px; font-size: 18px; }
         }
     </style>
@@ -89,7 +82,8 @@
     <div id="addWords" class="section">
         <h3>단어 일괄 등록</h3>
         <select id="folderSelect"><option value="">단어장을 선택하세요</option></select>
-        <textarea id="wordInput" rows="10" placeholder="번호   영단어   뜻&#10;1   advent   도래, 출현&#10;2   arise   발생하다"></textarea>
+        <!-- 입력 안내 문구 변경 (번호 생략, 구분 기준 명시) -->
+        <textarea id="wordInput" rows="10" placeholder="영단어와 뜻을 입력하세요. (엑셀에서 복사하거나, 탭/스페이스바 2번 이상으로 구분)&#10;advent    도래, 출현&#10;stem from    ~에서 유래하다"></textarea>
         <button class="action-btn" onclick="saveWords()">단어 등록하기</button>
     </div>
 
@@ -129,7 +123,6 @@
 <script>
     // ----------------- 환경 설정 ----------------- //
     // 이곳에 Google Apps Script 웹 앱 URL을 붙여넣으세요.
-    // 비워두면 임시로 브라우저(localStorage)에 저장됩니다.
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby3YhnuJOAyDY9YH0AJQHQ1nVmZkBmfE0UNTXHke8DfKZ52oonKi9RzYEUtn9x3AYlW/exec'; 
     let db = {};
 
@@ -142,7 +135,15 @@
         }
         try {
             const response = await fetch(SCRIPT_URL);
-            db = await response.json();
+            const result = await response.json();
+            
+            if (result.error) {
+                console.error("서버 에러:", result.error);
+                alert("구글 시트 연결 에러: " + result.error + "\n시트 이름이 '단어장DB'인지 확인해주세요.");
+                db = {}; 
+            } else {
+                db = result;
+            }
             initUI();
         } catch (error) {
             console.error('데이터 불러오기 실패. 로컬 스토리지로 대체합니다.', error);
@@ -221,7 +222,7 @@
         }
     }
 
-    // ----------------- 단어 등록 로직 ----------------- //
+    // ----------------- 단어 등록 로직 (수정됨) ----------------- //
     function saveWords() {
         const folder = document.getElementById('folderSelect').value;
         const text = document.getElementById('wordInput').value;
@@ -229,29 +230,40 @@
         if (!folder) return alert('단어장을 선택하거나 새로 생성해주세요!');
         if (!text.trim()) return alert('단어를 입력해주세요.');
 
+        // 1. 해당 폴더의 현재 가장 큰 단어 번호 찾기 (없으면 1부터 시작)
+        let nextId = 1;
+        if (db[folder] && db[folder].length > 0) {
+            nextId = Math.max(...db[folder].map(w => w.id)) + 1;
+        }
+
         const lines = text.split('\n');
         let count = 0;
 
         lines.forEach(line => {
-            const parts = line.trim().split(/\s+/);
-            if (parts.length >= 3) {
-                const id = parseInt(parts[0]);
-                const en = parts[1];
-                const ko = parts.slice(2).join(' '); 
+            if (!line.trim()) return; // 빈 줄은 건너뛰기
+
+            // 2. 탭(\t) 또는 2개 이상의 연속된 공백(\s{2,})을 기준으로 영단어와 뜻 분리
+            // 띄어쓰기 1개는 영어 숙어(stem from 등)로 취급하여 분리하지 않음
+            const parts = line.trim().split(/\t|\s{2,}/);
+            
+            if (parts.length >= 2) {
+                const en = parts[0].trim();
+                const ko = parts.slice(1).join(' ').trim(); // 뜻에 띄어쓰기가 들어간 경우를 대비해 나머지를 합침
                 
-                if (!isNaN(id)) {
-                    const existingIndex = db[folder].findIndex(w => w.id === id);
-                    if (existingIndex > -1) db[folder][existingIndex] = {id, en, ko};
-                    else db[folder].push({id, en, ko});
-                    count++;
-                }
+                db[folder].push({id: nextId, en: en, ko: ko});
+                nextId++; // 다음 단어를 위해 번호 증가
+                count++;
             }
         });
 
-        saveDB();
-        alert(`${count}개의 단어가 성공적으로 등록되었습니다!`);
-        document.getElementById('wordInput').value = '';
-        renderFolders();
+        if (count > 0) {
+            saveDB();
+            alert(`${count}개의 단어가 성공적으로 등록되었습니다!`);
+            document.getElementById('wordInput').value = '';
+            renderFolders();
+        } else {
+            alert('입력 형식이 잘못되었습니다. 단어와 뜻을 탭이나 띄어쓰기 2번 이상으로 띄워주세요.');
+        }
     }
 
     // ----------------- 모달 및 수정/삭제 로직 ----------------- //
@@ -344,7 +356,7 @@
         const enToKo = parseInt(document.getElementById('enToKoCount').value) || 0;
         const koToEn = parseInt(document.getElementById('koToEnCount').value) || 0;
 
-        document.getElementById('printBtn').style.display = 'none'; // 에러 시 대비하여 버튼 숨김
+        document.getElementById('printBtn').style.display = 'none';
 
         if (!folder) return alert('단어장을 선택해주세요.');
         if (isNaN(start) || isNaN(end)) return alert('출제 범위를 정확히 입력해주세요.');
@@ -362,7 +374,7 @@
         const koToEnQuestions = shuffled.slice(enToKo, totalQuestions);
 
         renderWorksheet(enToKoQuestions, koToEnQuestions);
-        document.getElementById('printBtn').style.display = 'block'; // 학습지 생성 완료 후 버튼 표시
+        document.getElementById('printBtn').style.display = 'block'; 
     }
 
     function renderWorksheet(enToKo, koToEn) {

@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>나만의 단어장 & 학습지 생성기</title>
+    <!-- PDF 다운로드를 위한 html2pdf 라이브러리 추가 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body { font-family: 'Pretendard', sans-serif; background: #f4f7f6; padding: 20px; }
         .container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
@@ -27,6 +29,11 @@
         .question-item { margin-bottom: 15px; font-size: 16px; display: flex; align-items: center;}
         .blank { display: inline-block; width: 200px; border-bottom: 1px solid #000; margin-left: 10px; }
 
+        /* 답지 UI */
+        .answer-key { margin-top: 40px; padding-top: 20px; border-top: 2px solid #2c3e50; page-break-before: always; }
+        .answer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px; }
+        .answer-item { font-size: 15px; background: #f9f9f9; padding: 8px; border-radius: 4px; border: 1px solid #eee; }
+
         /* 모달(팝업) 배경 및 본문 */
         .modal { display: none; position: fixed; z-index: 10; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
         .modal-content { background-color: #fff; margin: 10% auto; padding: 20px 30px; border-radius: 12px; width: 80%; max-width: 600px; max-height: 70vh; overflow-y: auto; position: relative; }
@@ -44,20 +51,6 @@
         .btn-edit { background-color: #f39c12; color: white; }
         .btn-delete { background-color: #e74c3c; color: white; }
         .btn-save { background-color: #2ecc71; color: white; }
-
-        /* === PDF 저장 (인쇄) 전용 스타일 === */
-        @media print {
-            body { background: white; padding: 0; }
-            .container { box-shadow: none; padding: 0; max-width: 100%; margin: 0; }
-            h1, .tabs, #folders, #addWords, #testFolderSelect, 
-            #startNum, #endNum, #enToKoCount, #koToEnCount, 
-            .action-btn, #createTest h3:first-child { 
-                display: none !important; 
-            }
-            #createTest { display: block !important; }
-            .worksheet-output { border-top: none; margin-top: 0; padding-top: 0; }
-            .question-item { page-break-inside: avoid; margin-bottom: 20px; font-size: 18px; }
-        }
     </style>
 </head>
 <body>
@@ -82,7 +75,6 @@
     <div id="addWords" class="section">
         <h3>단어 일괄 등록</h3>
         <select id="folderSelect"><option value="">단어장을 선택하세요</option></select>
-        <!-- 입력 안내 문구 변경 (번호 생략, 구분 기준 명시) -->
         <textarea id="wordInput" rows="10" placeholder="영단어와 뜻을 입력하세요. (엑셀에서 복사하거나, 탭/스페이스바 2번 이상으로 구분)&#10;advent    도래, 출현&#10;stem from    ~에서 유래하다"></textarea>
         <button class="action-btn" onclick="saveWords()">단어 등록하기</button>
     </div>
@@ -102,9 +94,10 @@
         
         <div style="display: flex; gap: 10px; margin-top: 10px;">
             <button class="action-btn" onclick="generateTest()">학습지 만들기</button>
-            <button class="action-btn" id="printBtn" style="display: none; background: #34495e;" onclick="window.print()">PDF로 저장 (인쇄)</button>
+            <button class="action-btn" id="printBtn" style="display: none; background: #e74c3c;" onclick="downloadPDF()">PDF 파일로 다운로드</button>
         </div>
 
+        <!-- PDF로 저장될 영역 -->
         <div id="worksheetOutput" class="worksheet-output"></div>
     </div>
 </div>
@@ -122,7 +115,6 @@
 
 <script>
     // ----------------- 환경 설정 ----------------- //
-    // 이곳에 Google Apps Script 웹 앱 URL을 붙여넣으세요.
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby3YhnuJOAyDY9YH0AJQHQ1nVmZkBmfE0UNTXHke8DfKZ52oonKi9RzYEUtn9x3AYlW/exec'; 
     let db = {};
 
@@ -222,7 +214,7 @@
         }
     }
 
-    // ----------------- 단어 등록 로직 (수정됨) ----------------- //
+    // ----------------- 단어 등록 로직 ----------------- //
     function saveWords() {
         const folder = document.getElementById('folderSelect').value;
         const text = document.getElementById('wordInput').value;
@@ -230,7 +222,6 @@
         if (!folder) return alert('단어장을 선택하거나 새로 생성해주세요!');
         if (!text.trim()) return alert('단어를 입력해주세요.');
 
-        // 1. 해당 폴더의 현재 가장 큰 단어 번호 찾기 (없으면 1부터 시작)
         let nextId = 1;
         if (db[folder] && db[folder].length > 0) {
             nextId = Math.max(...db[folder].map(w => w.id)) + 1;
@@ -240,18 +231,16 @@
         let count = 0;
 
         lines.forEach(line => {
-            if (!line.trim()) return; // 빈 줄은 건너뛰기
+            if (!line.trim()) return;
 
-            // 2. 탭(\t) 또는 2개 이상의 연속된 공백(\s{2,})을 기준으로 영단어와 뜻 분리
-            // 띄어쓰기 1개는 영어 숙어(stem from 등)로 취급하여 분리하지 않음
             const parts = line.trim().split(/\t|\s{2,}/);
             
             if (parts.length >= 2) {
                 const en = parts[0].trim();
-                const ko = parts.slice(1).join(' ').trim(); // 뜻에 띄어쓰기가 들어간 경우를 대비해 나머지를 합침
+                const ko = parts.slice(1).join(' ').trim();
                 
                 db[folder].push({id: nextId, en: en, ko: ko});
-                nextId++; // 다음 단어를 위해 번호 증가
+                nextId++; 
                 count++;
             }
         });
@@ -348,7 +337,7 @@
         }
     }
 
-    // ----------------- 학습지 생성 로직 ----------------- //
+    // ----------------- 학습지 및 정답지 생성 로직 ----------------- //
     function generateTest() {
         const folder = document.getElementById('testFolderSelect').value;
         const start = parseInt(document.getElementById('startNum').value);
@@ -379,24 +368,60 @@
 
     function renderWorksheet(enToKo, koToEn) {
         const output = document.getElementById('worksheetOutput');
-        let html = '<h2>📝 학습지</h2>';
+        
+        // 문제지 영역
+        let html = '<div id="pdf-content" style="padding: 20px; background: white;">';
+        html += '<h2>📝 단어 학습지</h2>';
         let qNum = 1;
+        let ansNum = 1;
+
+        // 정답지 HTML 변수 분리
+        let answerHtml = '<div class="answer-key"><h2>✅ 정답지</h2>';
 
         if (enToKo.length > 0) {
             html += '<h3>Part 1. 영단어를 보고 뜻을 적으세요.</h3>';
+            answerHtml += '<h3>Part 1</h3><div class="answer-grid">';
+            
             enToKo.forEach(q => {
                 html += `<div class="question-item">${qNum++}. ${q.en} <span class="blank"></span></div>`;
+                answerHtml += `<div class="answer-item"><b>${ansNum++}.</b> ${q.ko}</div>`;
             });
+            answerHtml += '</div>';
         }
 
         if (koToEn.length > 0) {
             html += '<h3>Part 2. 뜻을 보고 영단어를 적으세요.</h3>';
+            answerHtml += '<h3>Part 2</h3><div class="answer-grid">';
+            
             koToEn.forEach(q => {
                 html += `<div class="question-item">${qNum++}. ${q.ko} <span class="blank"></span></div>`;
+                answerHtml += `<div class="answer-item"><b>${ansNum++}.</b> ${q.en}</div>`;
             });
+            answerHtml += '</div>';
         }
 
+        answerHtml += '</div>'; // 정답지 영역 닫기
+        html += answerHtml; // 문제지 뒤에 정답지 이어붙이기
+        html += '</div>'; // 전체 PDF 영역 닫기
+
         output.innerHTML = html;
+    }
+
+    // ----------------- PDF 다운로드 기능 ----------------- //
+    function downloadPDF() {
+        const element = document.getElementById('pdf-content');
+        
+        // PDF 생성 옵션
+        const opt = {
+            margin:       10,
+            filename:     '단어장_학습지.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        // html2pdf 라이브러리 실행
+        html2pdf().set(opt).from(element).save();
     }
 
     // 초기 실행

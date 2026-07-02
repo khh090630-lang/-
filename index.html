@@ -371,7 +371,7 @@
     function renderWorksheet(enToKo, koToEn) {
         const output = document.getElementById('worksheetOutput');
         
-        // 문제지 영역 (불필요한 인라인 패딩 제거로 상단 여백 축소)
+        // 문제지 영역
         let html = '<div id="pdf-content" style="background: white;">';
         html += '<h2 style="text-align:center; margin-bottom: 20px;">📝 단어 학습지</h2>';
         
@@ -381,17 +381,15 @@
         // 정답지 HTML 변수 분리
         let answerHtml = '<div class="answer-key"><h2 style="text-align:center;">✅ 정답지</h2>';
 
-        // 2단 표 생성 함수
+        // 2단 표 생성 함수 (좌->우 순서로 변경)
         function buildTableHTML(questions, type) {
             if (questions.length === 0) return '';
             let tHtml = '<table class="worksheet-table">';
             
-            // 문제 수의 절반을 기준으로 왼쪽(1열), 오른쪽(2열)으로 나눔
-            let half = Math.ceil(questions.length / 2); 
-            
-            for (let i = 0; i < half; i++) {
+            // 2개씩 건너뛰며 반복
+            for (let i = 0; i < questions.length; i += 2) {
                 let q1 = questions[i];
-                let q2 = questions[i + half];
+                let q2 = questions[i + 1];
                 
                 tHtml += '<tr>';
                 
@@ -402,7 +400,7 @@
                 
                 // 2열 (오른쪽)
                 if (q2) {
-                    let num2 = globalQNum + i + half;
+                    let num2 = globalQNum + i + 1;
                     let text2 = type === 'enToKo' ? q2.en : q2.ko;
                     tHtml += `<td class="q-cell">${num2}. ${text2}</td><td class="a-cell"></td>`;
                 } else {
@@ -453,7 +451,7 @@
     function downloadPDF() {
         const element = document.getElementById('pdf-content');
         
-        // PDF 생성 옵션 (margin을 15mm로 조정해 깔끔한 상하좌우 여백 확보)
+        // PDF 생성 옵션
         const opt = {
             margin:       15,
             filename:     '단어장_학습지.pdf',

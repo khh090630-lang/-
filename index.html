@@ -272,7 +272,7 @@
         }
     }
 
-    // ----------------- 단어 등록 로직 (선택적 번호 입력 지원) ----------------- //
+    // ----------------- 단어 등록 로직 (번호 자동 밀어내기 Shift 적용) ----------------- //
     function saveWords() {
         const folder = document.getElementById('folderSelect').value;
         const text = document.getElementById('wordInput').value;
@@ -288,23 +288,29 @@
 
             const parts = line.trim().split(/\t|\s{2,}/);
             
-            // 사용자가 번호를 맨 앞에 직접 입력한 경우 (3덩어리 이상 & 첫 번째가 숫자)
+            // 사용자가 번호를 맨 앞에 직접 입력한 경우
             if (parts.length >= 3 && !isNaN(parseInt(parts[0]))) {
                 const id = parseInt(parts[0]);
                 const en = parts[1].trim();
                 const ko = parts.slice(2).join(' ').trim();
 
                 const existingIndex = db[folder].findIndex(w => w.id === id);
-                if (existingIndex > -1) db[folder][existingIndex] = {id, en, ko};
-                else db[folder].push({id, en, ko});
+                if (existingIndex > -1) {
+                    // 동일한 번호가 있으면, 그 번호 포함 뒤에 있는 단어들을 1씩 밀어냄 (Shift)
+                    db[folder].forEach(w => {
+                        if (w.id >= id) {
+                            w.id += 1;
+                        }
+                    });
+                }
+                db[folder].push({id, en, ko});
                 count++;
             } 
-            // 번호를 생략하고 입력한 경우 (자동 넘버링)
+            // 번호를 생략하고 입력한 경우 (가장 뒷 번호로 자동 배정)
             else if (parts.length >= 2) {
                 const en = parts[0].trim();
                 const ko = parts.slice(1).join(' ').trim();
                 
-                // 현재 등록된 번호 중 가장 큰 번호 + 1 찾기
                 let nextId = db[folder].length > 0 ? Math.max(...db[folder].map(w => w.id)) + 1 : 1;
                 
                 db[folder].push({id: nextId, en: en, ko: ko});
@@ -335,7 +341,7 @@
         renderFolders();
     }
 
-    // 모달 창 안에서 특정 위치(번호)에 단어 1개 즉시 추가
+    // 모달 창 안에서 특정 위치(번호)에 단어 1개 즉시 추가 (번호 밀어내기 Shift 적용)
     function insertWord() {
         const idVal = document.getElementById('insertId').value;
         const enVal = document.getElementById('insertEn').value;
@@ -349,16 +355,17 @@
         if (isNaN(newId)) {
             // 번호를 안 적었으면 가장 뒷 번호로 자동 배정
             newId = db[currentFolder].length > 0 ? Math.max(...db[currentFolder].map(w => w.id)) + 1 : 1;
-        }
-        
-        const existingIndex = db[currentFolder].findIndex(w => w.id === newId);
-        if (existingIndex > -1) {
-            if(confirm(`${newId}번 단어가 이미 존재합니다. 내용을 덮어쓰시겠습니까?`)) {
-                db[currentFolder][existingIndex] = { id: newId, en: enVal.trim(), ko: koVal.trim() };
-            } else {
-                return;
-            }
+            db[currentFolder].push({ id: newId, en: enVal.trim(), ko: koVal.trim() });
         } else {
+            // 번호를 적었을 경우: 해당 번호부터 뒤로 1씩 밀어내기 (Shift)
+            const existingIndex = db[currentFolder].findIndex(w => w.id === newId);
+            if (existingIndex > -1) {
+                db[currentFolder].forEach(w => {
+                    if (w.id >= newId) {
+                        w.id += 1;
+                    }
+                });
+            }
             db[currentFolder].push({ id: newId, en: enVal.trim(), ko: koVal.trim() });
         }
         
@@ -380,6 +387,7 @@
             return;
         }
 
+        // 출력할 때 번호 순으로 정렬
         words.sort((a, b) => a.id - b.id);
 
         let html = '<table class="word-table">';
@@ -545,13 +553,15 @@
 
     // ----------------- PDF 다운로드 기능 (스크롤 버그 해결) ----------------- //
     function downloadPDF() {
+        // 스크롤이 내려가 있을 때 캡처하면 상단 공백이 생기는 버그 방지
+        window.scrollTo(0, 0); 
+
         const element = document.getElementById('pdf-content');
         
         const opt = {
             margin:       [8, 15, 15, 15], 
             filename:     '단어장_학습지.pdf',
             image:        { type: 'jpeg', quality: 0.98 },
-            // scrollY: 0 을 추가하여 스크롤을 내린 상태에서 다운받아도 상단 공백이 생기지 않도록 수정
             html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
             pagebreak:    { mode: ['css', 'legacy'] }

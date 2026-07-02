@@ -24,15 +24,17 @@
         button.action-btn { width: 100%; padding: 12px; background: #2ecc71; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; }
         button.action-btn:hover { background: #27ae60; }
         
-        /* 학습지 출력 UI */
+        /* 학습지 출력 UI (투트랙 테이블 방식) */
         .worksheet-output { margin-top: 20px; border-top: 2px dashed #ccc; padding-top: 20px; }
-        .question-item { margin-bottom: 15px; font-size: 16px; display: flex; align-items: center;}
-        .blank { display: inline-block; width: 200px; border-bottom: 1px solid #000; margin-left: 10px; }
+        .worksheet-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; table-layout: fixed; }
+        .worksheet-table td { border: 1px solid #ccc; padding: 12px 10px; font-size: 15px; vertical-align: middle; word-wrap: break-word; }
+        .worksheet-table .q-cell { width: 25%; font-weight: 500; background-color: #fafafa; }
+        .worksheet-table .a-cell { width: 25%; }
 
         /* 답지 UI */
         .answer-key { margin-top: 40px; padding-top: 20px; border-top: 2px solid #2c3e50; page-break-before: always; }
-        .answer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px; }
-        .answer-item { font-size: 15px; background: #f9f9f9; padding: 8px; border-radius: 4px; border: 1px solid #eee; }
+        .answer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-bottom: 20px; }
+        .answer-item { font-size: 14px; background: #f9f9f9; padding: 8px; border-radius: 4px; border: 1px solid #eee; }
 
         /* 모달(팝업) 배경 및 본문 */
         .modal { display: none; position: fixed; z-index: 10; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
@@ -369,33 +371,73 @@
     function renderWorksheet(enToKo, koToEn) {
         const output = document.getElementById('worksheetOutput');
         
-        // 문제지 영역
-        let html = '<div id="pdf-content" style="padding: 20px; background: white;">';
-        html += '<h2>📝 단어 학습지</h2>';
-        let qNum = 1;
-        let ansNum = 1;
+        // 문제지 영역 (불필요한 인라인 패딩 제거로 상단 여백 축소)
+        let html = '<div id="pdf-content" style="background: white;">';
+        html += '<h2 style="text-align:center; margin-bottom: 20px;">📝 단어 학습지</h2>';
+        
+        let globalQNum = 1; // 문제 번호 누적
+        let globalAnsNum = 1; // 정답 번호 누적
 
         // 정답지 HTML 변수 분리
-        let answerHtml = '<div class="answer-key"><h2>✅ 정답지</h2>';
+        let answerHtml = '<div class="answer-key"><h2 style="text-align:center;">✅ 정답지</h2>';
 
+        // 2단 표 생성 함수
+        function buildTableHTML(questions, type) {
+            if (questions.length === 0) return '';
+            let tHtml = '<table class="worksheet-table">';
+            
+            // 문제 수의 절반을 기준으로 왼쪽(1열), 오른쪽(2열)으로 나눔
+            let half = Math.ceil(questions.length / 2); 
+            
+            for (let i = 0; i < half; i++) {
+                let q1 = questions[i];
+                let q2 = questions[i + half];
+                
+                tHtml += '<tr>';
+                
+                // 1열 (왼쪽)
+                let num1 = globalQNum + i;
+                let text1 = type === 'enToKo' ? q1.en : q1.ko;
+                tHtml += `<td class="q-cell">${num1}. ${text1}</td><td class="a-cell"></td>`;
+                
+                // 2열 (오른쪽)
+                if (q2) {
+                    let num2 = globalQNum + i + half;
+                    let text2 = type === 'enToKo' ? q2.en : q2.ko;
+                    tHtml += `<td class="q-cell">${num2}. ${text2}</td><td class="a-cell"></td>`;
+                } else {
+                    // 오른쪽 문제가 없으면 빈칸 처리
+                    tHtml += `<td class="q-cell"></td><td class="a-cell"></td>`;
+                }
+                
+                tHtml += '</tr>';
+            }
+            
+            globalQNum += questions.length; // 다음 파트를 위해 번호 누적
+            tHtml += '</table>';
+            return tHtml;
+        }
+
+        // Part 1. 영단어 -> 뜻
         if (enToKo.length > 0) {
             html += '<h3>Part 1. 영단어를 보고 뜻을 적으세요.</h3>';
+            html += buildTableHTML(enToKo, 'enToKo');
+
             answerHtml += '<h3>Part 1</h3><div class="answer-grid">';
-            
             enToKo.forEach(q => {
-                html += `<div class="question-item">${qNum++}. ${q.en} <span class="blank"></span></div>`;
-                answerHtml += `<div class="answer-item"><b>${ansNum++}.</b> ${q.ko}</div>`;
+                answerHtml += `<div class="answer-item"><b>${globalAnsNum++}.</b> ${q.ko}</div>`;
             });
             answerHtml += '</div>';
         }
 
+        // Part 2. 뜻 -> 영단어
         if (koToEn.length > 0) {
             html += '<h3>Part 2. 뜻을 보고 영단어를 적으세요.</h3>';
+            html += buildTableHTML(koToEn, 'koToEn');
+
             answerHtml += '<h3>Part 2</h3><div class="answer-grid">';
-            
             koToEn.forEach(q => {
-                html += `<div class="question-item">${qNum++}. ${q.ko} <span class="blank"></span></div>`;
-                answerHtml += `<div class="answer-item"><b>${ansNum++}.</b> ${q.en}</div>`;
+                answerHtml += `<div class="answer-item"><b>${globalAnsNum++}.</b> ${q.en}</div>`;
             });
             answerHtml += '</div>';
         }
@@ -411,9 +453,9 @@
     function downloadPDF() {
         const element = document.getElementById('pdf-content');
         
-        // PDF 생성 옵션
+        // PDF 생성 옵션 (margin을 15mm로 조정해 깔끔한 상하좌우 여백 확보)
         const opt = {
-            margin:       10,
+            margin:       15,
             filename:     '단어장_학습지.pdf',
             image:        { type: 'jpeg', quality: 0.98 },
             html2canvas:  { scale: 2, useCORS: true },

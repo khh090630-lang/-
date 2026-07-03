@@ -2,6 +2,8 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <!-- ★ 모바일 UI 최적화를 위한 뷰포트 메타 태그 추가 ★ -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>나만의 단어장 & 학습지 생성기</title>
     <!-- PDF 다운로드를 위한 html2pdf 라이브러리 추가 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -66,7 +68,7 @@
 
         /* ================== 플래시카드 전용 스타일 ================== */
         .fc-area { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 0; overflow: hidden; }
-        .fc-container { width: 100%; max-width: 350px; height: 250px; margin: 20px auto; perspective: 1000px; position: relative; user-select: none; }
+        .fc-container { width: 100%; max-width: 350px; height: 300px; margin: 20px auto; perspective: 1000px; position: relative; user-select: none; }
         #fcSwipeWrapper { width: 100%; height: 100%; position: absolute; transform-origin: center bottom; cursor: grab; }
         #fcSwipeWrapper:active { cursor: grabbing; }
         
@@ -89,10 +91,48 @@
         .fc-word-pill.unk { background: #fadbd8; color: #c0392b; border: 1px solid #e74c3c; }
         
         /* 뱃지 UI */
-        .status-badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .status-badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; white-space: nowrap; }
         .status-know { background: #d5f5e3; color: #27ae60; border: 1px solid #2ecc71; }
         .status-unk { background: #fadbd8; color: #c0392b; border: 1px solid #e74c3c; }
         .status-none { background: #eee; color: #888; border: 1px solid #ccc; }
+
+        /* ================== 모바일 반응형 디자인 (NEW) ================== */
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .container { padding: 15px; border-radius: 8px; }
+            h1 { font-size: 22px; flex-direction: column; gap: 5px; }
+            
+            .tabs { flex-wrap: wrap; }
+            .tab-btn { flex: 1 1 40%; font-size: 14px; padding: 10px 5px; }
+            
+            /* 모달 반응형 */
+            .modal-content { width: 95%; padding: 15px; height: 90vh; margin: 5vh auto; }
+            .modal-header { flex-direction: column; align-items: flex-start; gap: 10px; padding-right: 0; }
+            .modal-header > div { width: 100%; display: flex; flex-direction: column; gap: 5px; }
+            #modalFilter { width: 100%; }
+            .close-btn { top: 10px; right: 15px; }
+            
+            /* 단어 삽입/삭제 UI 반응형 (가로 -> 세로) */
+            .insert-row { flex-direction: column; align-items: stretch; gap: 8px; }
+            .insert-row > span { width: 100% !important; text-align: left !important; margin-bottom: 2px; }
+            .insert-row > input, .insert-row > button { width: 100% !important; margin: 0; }
+            
+            /* 학습지 & 플래시카드 설정창 반응형 */
+            #createTest > div, #fcSetupArea > div { flex-direction: column; gap: 8px; }
+            #createTest > div > select, #createTest > div > input, 
+            #fcSetupArea > div > select, #fcSetupArea > div > input { width: 100% !important; margin: 0; }
+            
+            /* 단어장 테이블 반응형 (가로 스크롤 허용) */
+            #wordListContainer { overflow-x: auto; }
+            .word-table { font-size: 13px; white-space: nowrap; }
+            .word-table th, .word-table td { padding: 8px 5px; }
+            
+            /* 플래시카드 크기 조정 */
+            .fc-container { height: 280px; }
+            .fc-face { font-size: 24px; padding: 15px; }
+            .fc-controls { flex-direction: row; gap: 10px; }
+            .fc-btn { padding: 12px; font-size: 14px; }
+        }
     </style>
 </head>
 <body>
@@ -137,6 +177,7 @@
                 <option value="all">모든 단어 학습 (상태 무관)</option>
                 <option value="know">아는 단어(O)만 복습</option>
                 <option value="unk">헷갈리는 단어(X)만 집중 학습</option>
+                <option value="none">미분류 단어(-)만 처음 학습</option>
             </select>
             
             <select id="fcOrderSelect" style="margin-bottom: 10px;">
@@ -157,7 +198,7 @@
                     </div>
                 </div>
             </div>
-            <p style="font-size: 13px; color: #95a5a6; margin: 15px 0;">카드를 터치(클릭)하면 뜻이 보입니다.<br>스와이프: 왼쪽(모름) ⬅️ ➡️ 오른쪽(앎)</p>
+            <p style="font-size: 13px; color: #95a5a6; margin: 15px 0; text-align: center;">카드를 터치(클릭)하면 뜻이 보입니다.<br>스와이프: 왼쪽(모름) ⬅️ ➡️ 오른쪽(앎)</p>
             <div class="fc-controls">
                 <button class="fc-btn fc-btn-no" onclick="animateSwipeAndNext('left')">← 헷갈림 (X)</button>
                 <button class="fc-btn fc-btn-yes" onclick="animateSwipeAndNext('right')">알아요 (O) →</button>
@@ -200,6 +241,7 @@
                 <option value="all">모든 단어에서 출제 (상태 무관)</option>
                 <option value="know">아는 단어(O) 중에서만 출제</option>
                 <option value="unk">헷갈리는 단어(X) 중에서만 출제</option>
+                <option value="none">미분류 단어(-) 중에서만 출제</option>
             </select>
             
             <select id="testOverlapMode" style="margin-top: 0; flex: 1;">
@@ -228,17 +270,18 @@
         <span class="close-btn" onclick="closeModal()">&times;</span>
         
         <div class="modal-header">
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <h2 id="modalTitle" style="margin: 0; color: #2c3e50;">폴더 이름</h2>
+            <h2 id="modalTitle" style="margin: 0; color: #2c3e50;">폴더 이름</h2>
+            <div>
                 <select id="modalFilter" onchange="renderWordList(currentFolder)" style="width: auto; padding: 6px; margin: 0; border-radius: 4px; font-size: 14px;">
                     <option value="all">전체 보기</option>
                     <option value="know">아는 단어만 (O)</option>
                     <option value="unk">헷갈리는 단어만 (X)</option>
+                    <option value="none">미분류 단어만 (-)</option>
                 </select>
             </div>
-            <div>
-                <button class="btn-small btn-edit" onclick="editFolderName()">이름 수정</button>
-                <button class="btn-small btn-delete" onclick="deleteFolder()">폴더 삭제</button>
+            <div style="display:flex; gap: 5px;">
+                <button class="btn-small btn-edit" style="flex:1;" onclick="editFolderName()">이름 수정</button>
+                <button class="btn-small btn-delete" style="flex:1;" onclick="deleteFolder()">폴더 삭제</button>
             </div>
         </div>
 
@@ -253,7 +296,6 @@
         <div class="insert-row bg-del">
             <span style="font-size: 13px; font-weight: bold; color: #c0392b; width: 12%; text-align: center;">구간 삭제</span>
             <input type="number" id="delStartId" placeholder="시작 번호" style="width: 35%;">
-            <span style="font-weight: bold; color: #555;">~</span>
             <input type="number" id="delEndId" placeholder="끝 번호" style="width: 35%;">
             <button class="btn-small btn-delete" onclick="bulkDeleteWords()" style="width: 13%; padding: 8px;">일괄 삭제</button>
         </div>
@@ -529,6 +571,7 @@
 
         if (filterVal === 'know') words = words.filter(w => w.status === 'know');
         if (filterVal === 'unk') words = words.filter(w => w.status === 'unk');
+        if (filterVal === 'none') words = words.filter(w => !w.status || w.status === '');
 
         if (words.length === 0) {
             container.innerHTML = '<p style="text-align:center; color:#888;">해당 조건의 단어가 없습니다.</p>';
@@ -541,7 +584,7 @@
         html += '<tr><th width="12%">번호</th><th width="13%">상태</th><th width="30%">영단어</th><th width="30%">뜻</th><th width="15%">관리</th></tr>';
         
         words.forEach(w => {
-            let statusBadge = '<span class="status-badge status-none">-</span>';
+            let statusBadge = '<span class="status-badge status-none">- 미분류</span>';
             if(w.status === 'know') statusBadge = '<span class="status-badge status-know">O 아는단어</span>';
             if(w.status === 'unk') statusBadge = '<span class="status-badge status-unk">X 헷갈림</span>';
 
@@ -636,6 +679,8 @@
             targetWords = targetWords.filter(w => w.status === 'know');
         } else if (statusFilter === 'unk') {
             targetWords = targetWords.filter(w => w.status === 'unk');
+        } else if (statusFilter === 'none') {
+            targetWords = targetWords.filter(w => !w.status || w.status === ''); // 미분류 필터링 적용
         }
 
         if(targetWords.length === 0) return alert('해당 범위와 조건에 맞는 단어가 없습니다.');
@@ -820,6 +865,8 @@
             targetWords = targetWords.filter(w => w.status === 'know');
         } else if (statusFilter === 'unk') {
             targetWords = targetWords.filter(w => w.status === 'unk');
+        } else if (statusFilter === 'none') {
+            targetWords = targetWords.filter(w => !w.status || w.status === ''); // 미분류 필터링 적용
         }
 
         if (targetWords.length === 0) {
@@ -857,6 +904,7 @@
             let statusText = "전체 단어";
             if (statusFilter === 'know') statusText = "아는 단어";
             else if (statusFilter === 'unk') statusText = "헷갈리는 단어";
+            else if (statusFilter === 'none') statusText = "미분류 단어";
             
             finalTitle = `[${folder}] ${start}번~${end}번 (${statusText}) - 총 ${totalQuestions}문제`;
         }

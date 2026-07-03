@@ -132,6 +132,13 @@
                 <input type="number" id="fcStartNum" placeholder="시작 번호 (선택)">
                 <input type="number" id="fcEndNum" placeholder="끝 번호 (선택)">
             </div>
+            
+            <!-- 학습 순서 선택 추가 -->
+            <select id="fcOrderSelect" style="margin-bottom: 10px;">
+                <option value="random">🔀 랜덤 순서로 학습</option>
+                <option value="sequential">🔢 번호 순서대로 학습</option>
+            </select>
+            
             <button class="action-btn" onclick="initFlashcards()">학습 시작하기</button>
         </div>
 
@@ -181,7 +188,6 @@
             <input type="number" id="endNum" placeholder="끝 번호 (예: 55)">
         </div>
         
-        <!-- 출제 필터 추가 -->
         <select id="testStatusFilter" style="margin-top: 0;">
             <option value="all">모든 단어에서 출제 (상태 무관)</option>
             <option value="know">아는 단어(O) 중에서만 출제</option>
@@ -210,7 +216,6 @@
         <div class="modal-header">
             <div style="display: flex; align-items: center; gap: 15px;">
                 <h2 id="modalTitle" style="margin: 0; color: #2c3e50;">폴더 이름</h2>
-                <!-- 보기 필터 추가 -->
                 <select id="modalFilter" onchange="renderWordList(currentFolder)" style="width: auto; padding: 6px; margin: 0; border-radius: 4px; font-size: 14px;">
                     <option value="all">전체 보기</option>
                     <option value="know">아는 단어만 (O)</option>
@@ -247,7 +252,6 @@
 
 <script>
     // ----------------- 환경 설정 ----------------- //
-    // 중요: 아래 코드가 정상 작동하려면 Google Apps Script도 새로 제공된 코드로 업데이트 해야 합니다.
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxl1brYxZ5WywT5WugRPYqHYiybLrsZvUkI5KWFpuON0RKDtxQ8_luYaWaQ2Uvb9div/exec'; 
     let db = {};
     let currentFolder = ''; 
@@ -604,14 +608,21 @@
         
         const startStr = document.getElementById('fcStartNum').value;
         const endStr = document.getElementById('fcEndNum').value;
+        const order = document.getElementById('fcOrderSelect').value;
         const start = startStr ? parseInt(startStr) : 0;
         const end = endStr ? parseInt(endStr) : 999999;
 
-        // 범위 필터링 및 셔플
+        // 범위 필터링
         const targetWords = db[folder].filter(w => w.id >= start && w.id <= end);
         if(targetWords.length === 0) return alert('해당 범위에 단어가 없습니다.');
 
-        fcList = [...targetWords].sort(() => 0.5 - Math.random());
+        // 정렬 방식에 따른 처리
+        if (order === 'sequential') {
+            fcList = [...targetWords].sort((a, b) => a.id - b.id);
+        } else {
+            fcList = [...targetWords].sort(() => 0.5 - Math.random());
+        }
+        
         fcIndex = 0;
         fcKnown = [];
         fcUnknown = [];
@@ -648,10 +659,10 @@
     function recordSwipe(direction) {
         const word = fcList[fcIndex];
         if(direction === 'right') { 
-            word.status = 'know'; // 데이터 객체 직접 업데이트
+            word.status = 'know'; 
             fcKnown.push(word);
         } else { 
-            word.status = 'unk'; // 데이터 객체 직접 업데이트
+            word.status = 'unk'; 
             fcUnknown.push(word);
         }
         fcIndex++;
@@ -713,7 +724,6 @@
     }
 
     function showFlashcardResult() {
-        // 학습 종료 시 변경된 상태(status)를 구글 시트(또는 로컬)에 영구 저장
         saveDB(); 
 
         document.getElementById('fcArea').style.display = 'none';
@@ -739,7 +749,12 @@
     }
 
     function retryUnknown() {
-        fcList = [...fcUnknown].sort(() => 0.5 - Math.random());
+        const order = document.getElementById('fcOrderSelect').value;
+        if (order === 'sequential') {
+            fcList = [...fcUnknown].sort((a, b) => a.id - b.id);
+        } else {
+            fcList = [...fcUnknown].sort(() => 0.5 - Math.random());
+        }
         fcIndex = 0;
         fcKnown = [];
         fcUnknown = [];
@@ -753,7 +768,7 @@
         const folder = document.getElementById('testFolderSelect').value;
         const start = parseInt(document.getElementById('startNum').value);
         const end = parseInt(document.getElementById('endNum').value);
-        const statusFilter = document.getElementById('testStatusFilter').value; // 필터값 가져오기
+        const statusFilter = document.getElementById('testStatusFilter').value; 
         const enToKo = parseInt(document.getElementById('enToKoCount').value) || 0;
         const koToEn = parseInt(document.getElementById('koToEnCount').value) || 0;
 
@@ -762,10 +777,8 @@
         if (!folder) return alert('단어장을 선택해주세요.');
         if (isNaN(start) || isNaN(end)) return alert('출제 범위를 정확히 입력해주세요.');
 
-        // 1차 필터링: 번호 범위
         let targetWords = db[folder].filter(w => w.id >= start && w.id <= end);
         
-        // 2차 필터링: 아는 단어 / 헷갈리는 단어 조건
         if (statusFilter === 'know') {
             targetWords = targetWords.filter(w => w.status === 'know');
         } else if (statusFilter === 'unk') {

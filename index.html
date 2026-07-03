@@ -8,7 +8,7 @@
     <style>
         body { font-family: 'Pretendard', sans-serif; background: #f4f7f6; padding: 20px; overflow-x: hidden; }
         .container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        h1 { color: #2c3e50; text-align: center; display: flex; align-items: center; justify-content: center; gap: 10px;}
+        h1 { color: #2c3e50; text-align: center; }
         
         /* 탭 메뉴 */
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
@@ -188,6 +188,9 @@
         <h3>학습지 생성 조건</h3>
         <select id="testFolderSelect"><option value="">단어장을 선택하세요</option></select>
         
+        <!-- 커스텀 제목 입력 추가 -->
+        <input type="text" id="testCustomTitle" placeholder="학습지 제목 (입력하지 않으면 자동 생성됩니다)">
+
         <div style="display: flex; gap: 10px;">
             <input type="number" id="startNum" placeholder="시작 번호 (예: 1)">
             <input type="number" id="endNum" placeholder="끝 번호 (예: 55)">
@@ -270,7 +273,6 @@
 
     // ----------------- 데이터 로드/저장 (캐시 우선 로딩 적용) ----------------- //
     async function loadDB() {
-        // 1. 체감 속도 향상을 위해 로컬 스토리지(브라우저 캐시)에서 먼저 불러옵니다. (0.1초 컷)
         const localData = localStorage.getItem('vocabDB');
         if (localData) {
             db = JSON.parse(localData);
@@ -280,7 +282,6 @@
         if (!SCRIPT_URL) return;
 
         try {
-            // 헤더에 조용히 동기화 중임을 표시
             document.getElementById('mainTitle').innerHTML = '단어장 & 학습지 생성기 <span style="font-size:14px; color:#7f8c8d; font-weight:normal;">(동기화 중...)</span>';
             
             const response = await fetch(SCRIPT_URL);
@@ -289,7 +290,6 @@
             if (result.error) {
                 console.error("서버 에러:", result.error);
             } else {
-                // 2. 백그라운드에서 가져온 최신 구글 시트 데이터로 덮어쓰고 최신화
                 db = result;
                 localStorage.setItem('vocabDB', JSON.stringify(db)); 
                 initUI();
@@ -302,7 +302,6 @@
     }
 
     async function saveDB() {
-        // ★ 중요: 저장할 때 로컬 스토리지에도 항상 동시 저장하여 다음 로딩을 빠르게 합니다.
         localStorage.setItem('vocabDB', JSON.stringify(db));
 
         if (!SCRIPT_URL) return;
@@ -451,7 +450,7 @@
     function openFolderDetail(folderName) {
         currentFolder = folderName;
         document.getElementById('modalTitle').innerText = folderName;
-        document.getElementById('modalFilter').value = 'all'; // 창 열때 필터 초기화
+        document.getElementById('modalFilter').value = 'all'; 
         renderWordList(folderName);
         document.getElementById('folderModal').style.display = 'block';
     }
@@ -529,7 +528,6 @@
             return;
         }
 
-        // 필터 적용
         if (filterVal === 'know') words = words.filter(w => w.status === 'know');
         if (filterVal === 'unk') words = words.filter(w => w.status === 'unk');
 
@@ -633,10 +631,8 @@
         const start = startStr ? parseInt(startStr) : 0;
         const end = endStr ? parseInt(endStr) : 999999;
 
-        // 1차 필터링: 번호 범위
         let targetWords = db[folder].filter(w => w.id >= start && w.id <= end);
         
-        // 2차 필터링: 상태 필터링 추가
         if (statusFilter === 'know') {
             targetWords = targetWords.filter(w => w.status === 'know');
         } else if (statusFilter === 'unk') {
@@ -645,7 +641,6 @@
 
         if(targetWords.length === 0) return alert('해당 범위와 조건에 맞는 단어가 없습니다.');
 
-        // 정렬 방식에 따른 처리
         if (order === 'sequential') {
             fcList = [...targetWords].sort((a, b) => a.id - b.id);
         } else {
@@ -795,6 +790,7 @@
     // ----------------- 학습지 및 정답지 생성 로직 ----------------- //
     function generateTest() {
         const folder = document.getElementById('testFolderSelect').value;
+        const customTitle = document.getElementById('testCustomTitle').value.trim();
         const start = parseInt(document.getElementById('startNum').value);
         const end = parseInt(document.getElementById('endNum').value);
         const statusFilter = document.getElementById('testStatusFilter').value; 
@@ -822,9 +818,9 @@
 
         let enToKoQuestions = [];
         let koToEnQuestions = [];
+        const totalQuestions = enToKo + koToEn;
 
         if (overlapMode === 'no_overlap') {
-            const totalQuestions = enToKo + koToEn;
             if (totalQuestions > targetWords.length) {
                 alert(`안내: 총 출제 문제 수(${totalQuestions}문제)가 조건에 맞는 출제 범위 개수(${targetWords.length}개)를 넘어섭니다!\n중복 출제 허용 옵션을 선택하거나 문제 수를 줄여주세요.`);
                 return;
@@ -833,7 +829,6 @@
             enToKoQuestions = shuffled.slice(0, enToKo);
             koToEnQuestions = shuffled.slice(enToKo, totalQuestions);
         } else {
-            // 중복 허용 모드: 각 유형별로 전체 targetWords 개수만큼 출제 가능
             if (enToKo > targetWords.length || koToEn > targetWords.length) {
                 alert(`안내: 각 유형의 문제 수가 조건에 맞는 출제 범위 개수(${targetWords.length}개)를 넘을 수 없습니다.`);
                 return;
@@ -845,15 +840,25 @@
             koToEnQuestions = shuffledForKoToEn.slice(0, koToEn);
         }
 
-        renderWorksheet(enToKoQuestions, koToEnQuestions);
+        // 자동 제목 생성 로직
+        let finalTitle = customTitle;
+        if (!finalTitle) {
+            let statusText = "전체 단어";
+            if (statusFilter === 'know') statusText = "아는 단어";
+            else if (statusFilter === 'unk') statusText = "헷갈리는 단어";
+            
+            finalTitle = `[${folder}] ${start}번~${end}번 (${statusText}) - 총 ${totalQuestions}문제`;
+        }
+
+        renderWorksheet(enToKoQuestions, koToEnQuestions, finalTitle);
         document.getElementById('printBtn').style.display = 'block'; 
     }
 
-    function renderWorksheet(enToKo, koToEn) {
+    function renderWorksheet(enToKo, koToEn, title) {
         const output = document.getElementById('worksheetOutput');
         
         let html = '<div id="pdf-content" style="background: white;">';
-        html += '<h2 style="text-align:center; margin: 5px 0 20px 0;">📝 단어 학습지</h2>';
+        html += `<h2 style="text-align:center; margin: 5px 0 20px 0;">${title}</h2>`;
         
         let globalQNum = 1; 
         let globalAnsNum = 1; 

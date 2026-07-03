@@ -188,7 +188,6 @@
         <h3>학습지 생성 조건</h3>
         <select id="testFolderSelect"><option value="">단어장을 선택하세요</option></select>
         
-        <!-- 커스텀 제목 입력 추가 -->
         <input type="text" id="testCustomTitle" placeholder="학습지 제목 (입력하지 않으면 자동 생성됩니다)">
 
         <div style="display: flex; gap: 10px;">
@@ -271,7 +270,7 @@
     let db = {};
     let currentFolder = ''; 
 
-    // ----------------- 데이터 로드/저장 (캐시 우선 로딩 적용) ----------------- //
+    // ----------------- 데이터 로드/저장 ----------------- //
     async function loadDB() {
         const localData = localStorage.getItem('vocabDB');
         if (localData) {
@@ -666,12 +665,24 @@
 
         const currentWord = fcList[fcIndex];
         document.getElementById('fcProgress').innerText = `카드 ${fcIndex + 1} / ${fcList.length}`;
+        
+        // 1. 카드 플립 애니메이션 일시 정지 및 강제 앞면 원상복구
+        fcCard.style.transition = 'none';
+        fcCard.classList.remove('flipped');
+        
+        // 2. 브라우저 리플로우(Reflow)를 강제로 발생시켜 변경사항 즉시 적용
+        void fcCard.offsetWidth;
+
+        // 3. 텍스트 교체
         document.getElementById('fcFront').innerText = currentWord.en;
         document.getElementById('fcBack').innerText = currentWord.ko;
 
+        // 4. 스와이프 래퍼 원상복구
         fcSwipeWrapper.style.transition = 'none';
         fcSwipeWrapper.style.transform = `translateX(0px) rotateZ(0deg) scale(1)`;
-        fcCard.classList.remove('flipped');
+        
+        // 5. 카드 플립 애니메이션 원상 복구
+        fcCard.style.transition = '';
     }
 
     function toggleFlip() {

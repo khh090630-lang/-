@@ -133,7 +133,13 @@
                 <input type="number" id="fcEndNum" placeholder="끝 번호 (선택)">
             </div>
             
-            <!-- 학습 순서 선택 추가 -->
+            <!-- 플래시카드 출제 필터 추가 -->
+            <select id="fcStatusFilter" style="margin-bottom: 10px;">
+                <option value="all">모든 단어 학습 (상태 무관)</option>
+                <option value="know">아는 단어(O)만 복습</option>
+                <option value="unk">헷갈리는 단어(X)만 집중 학습</option>
+            </select>
+            
             <select id="fcOrderSelect" style="margin-bottom: 10px;">
                 <option value="random">🔀 랜덤 순서로 학습</option>
                 <option value="sequential">🔢 번호 순서대로 학습</option>
@@ -173,7 +179,7 @@
             </div>
             <div id="fcUnkList" style="text-align: left; margin-bottom: 20px;"></div>
             
-            <button class="action-btn" id="fcRetryBtn" style="margin-bottom: 10px; background: #f39c12;" onclick="retryUnknown()">헷갈리는 단어만 다시하기</button>
+            <button class="action-btn" id="fcRetryBtn" style="margin-bottom: 10px; background: #f39c12;" onclick="retryUnknown()">이 중에서 헷갈리는 단어만 다시하기</button>
             <button class="action-btn" onclick="document.getElementById('fcResult').style.display='none'; document.getElementById('fcSetupArea').style.display='block';">종료하기</button>
         </div>
     </div>
@@ -609,12 +615,22 @@
         const startStr = document.getElementById('fcStartNum').value;
         const endStr = document.getElementById('fcEndNum').value;
         const order = document.getElementById('fcOrderSelect').value;
+        const statusFilter = document.getElementById('fcStatusFilter').value; // 필터 값 가져오기
+        
         const start = startStr ? parseInt(startStr) : 0;
         const end = endStr ? parseInt(endStr) : 999999;
 
-        // 범위 필터링
-        const targetWords = db[folder].filter(w => w.id >= start && w.id <= end);
-        if(targetWords.length === 0) return alert('해당 범위에 단어가 없습니다.');
+        // 1차 필터링: 번호 범위
+        let targetWords = db[folder].filter(w => w.id >= start && w.id <= end);
+        
+        // 2차 필터링: 상태 필터링 추가
+        if (statusFilter === 'know') {
+            targetWords = targetWords.filter(w => w.status === 'know');
+        } else if (statusFilter === 'unk') {
+            targetWords = targetWords.filter(w => w.status === 'unk');
+        }
+
+        if(targetWords.length === 0) return alert('해당 범위와 조건에 맞는 단어가 없습니다.');
 
         // 정렬 방식에 따른 처리
         if (order === 'sequential') {

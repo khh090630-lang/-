@@ -2,7 +2,6 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <!-- 모바일 UI 최적화를 위한 뷰포트 메타 태그 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>나만의 단어장 & 학습지 생성기</title>
     <!-- PDF 다운로드를 위한 html2pdf 라이브러리 추가 -->
@@ -19,7 +18,7 @@
 
         /* 탭 메뉴 */
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .tab-btn { flex: 1; padding: 10px; border: none; background: #e0e6ed; cursor: pointer; border-radius: 6px; font-weight: bold; min-width: 100px; white-space: nowrap; }
+        .tab-btn { flex: 1; padding: 10px; border: none; background: #e0e6ed; cursor: pointer; border-radius: 6px; font-weight: bold; min-width: 90px; white-space: nowrap; font-size: 14px;}
         .tab-btn.active { background: #3498db; color: white; }
         .section { display: none; }
         .section.active { display: block; }
@@ -51,23 +50,16 @@
         /* ================== 모달(단어 목록 & 전체 검색) UI 개편 ================== */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
         .modal-content { background-color: #fff; margin: 3% auto; border-radius: 12px; width: 90%; max-width: 800px; height: 85vh; position: relative; padding: 0; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        
-        /* 스크롤 영역 (모달 내부) */
         .modal-scroll-area { height: 100%; overflow-y: auto; padding: 20px 30px; box-sizing: border-box; }
         .modal-scroll-area::-webkit-scrollbar { width: 6px; }
         .modal-scroll-area::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
-        
-        /* 닫기 버튼 (스크롤과 무관하게 우측 상단 고정) */
         .close-btn { position: absolute; top: 12px; right: 15px; color: #555; font-size: 24px; font-weight: bold; cursor: pointer; z-index: 100; background: rgba(255, 255, 255, 0.95); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: background 0.2s; }
         .close-btn:hover { background: #f1c40f; color: white; }
-        
         .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 15px; padding-right: 40px; }
-        
         .word-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
         .word-table th, .word-table td { border: 1px solid #ddd; padding: 10px; text-align: left; vertical-align: middle; }
         .word-table th { background-color: #f4f7f6; position: sticky; top: 0; z-index: 2; box-shadow: 0 1px 2px rgba(0,0,0,0.1); } 
         .word-table input { padding: 5px; width: 90%; margin: 0; }
-        
         .btn-small { padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; margin-right: 4px; font-weight: bold; }
         .btn-edit { background-color: #3498db; color: white; }
         .btn-delete { background-color: #e74c3c; color: white; }
@@ -77,19 +69,16 @@
         .bg-add { background: #fef9e7; border: 1px solid #f9e79f; }
         .bg-del { background: #fdedec; border: 1px solid #fadbd8; }
 
-        /* ================== 플래시카드 전용 스타일 ================== */
-        .fc-area { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 0; overflow: hidden; }
+        /* ================== 플래시카드 & 온라인 테스트 스타일 ================== */
+        .fc-area, .test-area { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 0; overflow: hidden; }
         .fc-container { width: 100%; max-width: 350px; height: 300px; margin: 20px auto; perspective: 1000px; position: relative; user-select: none; }
         #fcSwipeWrapper { width: 100%; height: 100%; position: absolute; transform-origin: center bottom; cursor: grab; }
         #fcSwipeWrapper:active { cursor: grabbing; }
-        
         #fcCard { width: 100%; height: 100%; position: relative; transition: transform 0.4s; transform-style: preserve-3d; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         #fcCard.flipped { transform: rotateY(180deg); }
-        
         .fc-face { width: 100%; height: 100%; position: absolute; backface-visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; border-radius: 16px; padding: 20px; box-sizing: border-box; text-align: center; word-break: keep-all; pointer-events: none; }
         .fc-front { background: #fff; color: #2c3e50; border: 4px solid #3498db; }
         .fc-back { background: #fef9e7; color: #d35400; border: 4px solid #f39c12; transform: rotateY(180deg); font-size: 26px; }
-        
         .fc-controls { display: flex; justify-content: center; gap: 15px; margin-top: 15px; width: 100%; max-width: 350px; }
         .fc-btn { flex: 1; padding: 15px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; color: white; transition: transform 0.1s; }
         .fc-btn:active { transform: scale(0.95); }
@@ -101,74 +90,74 @@
         .fc-word-pill.know { background: #d5f5e3; color: #27ae60; border: 1px solid #2ecc71; }
         .fc-word-pill.unk { background: #fadbd8; color: #c0392b; border: 1px solid #e74c3c; }
         
-        /* 뱃지 UI */
         .status-badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; white-space: nowrap; }
         .status-know { background: #d5f5e3; color: #27ae60; border: 1px solid #2ecc71; }
         .status-unk { background: #fadbd8; color: #c0392b; border: 1px solid #e74c3c; }
         .status-none { background: #eee; color: #888; border: 1px solid #ccc; }
 
+        /* 온라인 테스트 전용 스타일 */
+        .test-card { width: 100%; max-width: 400px; background: white; border: 2px solid #3498db; border-radius: 12px; padding: 30px 20px; text-align: center; box-shadow: 0 8px 20px rgba(0,0,0,0.1); margin: 20px auto; }
+        .test-question-type { font-size: 14px; color: #3498db; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px;}
+        .test-question-text { font-size: 36px; font-weight: bold; color: #2c3e50; margin-bottom: 25px; word-break: keep-all;}
+        .test-input { font-size: 20px; text-align: center; padding: 15px; border: 2px solid #bdc3c7; border-radius: 8px; width: 100%; margin-bottom: 20px; outline: none; transition: border-color 0.2s;}
+        .test-input:focus { border-color: #3498db; }
+        .test-feedback { margin-top: 15px; padding: 15px; border-radius: 8px; font-weight: bold; display: none; font-size: 18px;}
+        .feedback-correct { background: #d5f5e3; color: #27ae60; border: 1px solid #2ecc71; }
+        .feedback-incorrect { background: #fadbd8; color: #c0392b; border: 1px solid #e74c3c; }
+        .feedback-selfval { background: #fef9e7; color: #d35400; border: 1px solid #f39c12; }
+
         /* ================== 모바일 반응형 디자인 ================== */
         @media (max-width: 600px) {
             body { padding: 10px; }
             .container { padding: 15px; border-radius: 8px; }
-            
             .main-header { flex-direction: column; align-items: stretch; gap: 15px; margin-bottom: 15px; }
             h1 { font-size: 22px; justify-content: center; }
             .global-search-btn { justify-content: center; padding: 12px; }
-            
             .tabs { flex-wrap: wrap; }
             .tab-btn { flex: 1 1 40%; font-size: 14px; padding: 10px 5px; }
-            
-            /* 모달 반응형 */
             .modal-content { width: 95%; height: 90vh; margin: 5vh auto; }
             .modal-scroll-area { padding: 15px; }
             .modal-header { flex-direction: column; align-items: flex-start; gap: 10px; padding-right: 0; }
             .modal-header > div { width: 100%; display: flex; flex-direction: column; gap: 5px; }
             #modalFilter { width: 100%; }
             .close-btn { top: 10px; right: 10px; width: 32px; height: 32px; font-size: 20px; }
-            
-            /* 단어 삽입/삭제 UI 반응형 (가로 -> 세로) */
             .insert-row { flex-direction: column; align-items: stretch; gap: 8px; }
             .insert-row > span { width: 100% !important; text-align: left !important; margin-bottom: 2px; }
             .insert-row > input, .insert-row > button { width: 100% !important; margin: 0; }
-            
-            /* 학습지 & 플래시카드 설정창 반응형 */
-            #createTest > div, #fcSetupArea > div { flex-direction: column; gap: 8px; }
+            #createTest > div, #fcSetupArea > div, #otSetupArea > div { flex-direction: column; gap: 8px; }
             #createTest > div > select, #createTest > div > input, 
-            #fcSetupArea > div > select, #fcSetupArea > div > input { width: 100% !important; margin: 0; }
-            
-            /* 단어장 테이블 반응형 (가로 스크롤 허용) */
+            #fcSetupArea > div > select, #fcSetupArea > div > input,
+            #otSetupArea > div > select, #otSetupArea > div > input { width: 100% !important; margin: 0; }
             .table-responsive-wrapper { overflow-x: auto; margin-top: 10px; }
             .word-table { font-size: 13px; white-space: nowrap; }
             .word-table th, .word-table td { padding: 8px 5px; }
-            
-            /* 플래시카드 크기 조정 */
             .fc-container { height: 280px; }
             .fc-face { font-size: 24px; padding: 15px; }
             .fc-controls { flex-direction: row; gap: 10px; }
             .fc-btn { padding: 12px; font-size: 14px; }
+            .test-question-text { font-size: 28px; }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <!-- 상단 헤더 & 전체 검색 버튼 -->
     <div class="main-header">
         <h1 id="mainTitle">단어장 & 학습지 생성기</h1>
         <button class="global-search-btn" onclick="openGlobalSearch()">🔍 전체 검색</button>
     </div>
     
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('folders')">단어장 폴더</button>
+        <button class="tab-btn active" onclick="switchTab('folders')">단어장</button>
         <button class="tab-btn" onclick="switchTab('addWords')">단어 등록</button>
         <button class="tab-btn" onclick="switchTab('flashcardTab')">플래시카드</button>
+        <button class="tab-btn" onclick="switchTab('onlineTestTab')">온라인 테스트</button>
         <button class="tab-btn" onclick="switchTab('createTest')">학습지 생성</button>
     </div>
 
     <!-- 1. 단어장 폴더 섹션 -->
     <div id="folders" class="section active">
-        <h3>내 단어장</h3>
+        <h3>내 단어장 폴더</h3>
         <button onclick="createFolder()" style="margin-bottom:15px; padding: 8px; border-radius: 6px; cursor: pointer;">+ 새 폴더 생성</button>
         <div class="folder-grid" id="folderContainer"></div>
     </div>
@@ -218,6 +207,7 @@
                 <button class="fc-btn fc-btn-no" onclick="animateSwipeAndNext('left')">← 헷갈림 (X)</button>
                 <button class="fc-btn fc-btn-yes" onclick="animateSwipeAndNext('right')">알아요 (O) →</button>
             </div>
+            <button class="action-btn" style="margin-top: 20px; background:#e74c3c;" onclick="quitFlashcards()">그만하기</button>
         </div>
 
         <div id="fcResult" class="fc-result" style="display: none;">
@@ -238,9 +228,87 @@
         </div>
     </div>
 
-    <!-- 4. 학습지 생성 섹션 -->
+    <!-- ★ NEW: 4. 온라인 테스트 섹션 ★ -->
+    <div id="onlineTestTab" class="section">
+        <h3>자체 온라인 테스트</h3>
+        
+        <div id="otSetupArea">
+            <select id="otFolderSelect"><option value="">단어장을 선택하세요</option></select>
+            
+            <div style="display: flex; gap: 10px;">
+                <input type="number" id="otStartNum" placeholder="시작 번호 (예: 1)">
+                <input type="number" id="otEndNum" placeholder="끝 번호 (예: 55)">
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                <select id="otStatusFilter" style="margin-top: 0; flex: 1;">
+                    <option value="all">모든 단어에서 출제 (상태 무관)</option>
+                    <option value="know">아는 단어(O) 중에서만 출제</option>
+                    <option value="unk">헷갈리는 단어(X) 중에서만 출제</option>
+                    <option value="none">미분류 단어(-) 중에서만 출제</option>
+                </select>
+                
+                <select id="otOverlapMode" style="margin-top: 0; flex: 1;">
+                    <option value="no_overlap">단어 중복 금지</option>
+                    <option value="overlap">유형 간 단어 중복 허용</option>
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <input type="number" id="otEnToKoCount" placeholder="영->한 문제 수 (예: 5)">
+                <input type="number" id="otKoToEnCount" placeholder="한->영 문제 수 (예: 5)">
+            </div>
+            
+            <button class="action-btn" style="margin-top: 10px;" onclick="initOnlineTest()">테스트 시작하기</button>
+        </div>
+
+        <div id="otArea" class="test-area" style="display: none;">
+            <p id="otProgress" style="color: #7f8c8d; font-weight: bold; margin: 0 0 10px 0; font-size:18px;"></p>
+            
+            <div class="test-card">
+                <div id="otQuestionType" class="test-question-type"></div>
+                <div id="otQuestionText" class="test-question-text"></div>
+                
+                <input type="text" id="otAnswerInput" class="test-input" placeholder="정답을 입력하세요" autocomplete="off" onkeypress="handleOtKeyPress(event)">
+                
+                <button class="action-btn" id="otSubmitBtn" onclick="submitOtAnswer()">제출하기 (Enter)</button>
+
+                <!-- 피드백 영역 -->
+                <div id="otFeedbackArea" class="test-feedback"></div>
+                
+                <!-- 자가 채점 버튼 (영->한 일때만 뜸) -->
+                <div id="otSelfEvalBtns" style="display: none; gap: 10px; margin-top: 15px;">
+                    <button class="fc-btn fc-btn-yes" onclick="processOtResult(true)">맞음 (O)</button>
+                    <button class="fc-btn fc-btn-no" onclick="processOtResult(false)">틀림 (X)</button>
+                </div>
+
+                <!-- 다음 문제 버튼 (한->영 자동채점 후 뜸) -->
+                <button class="action-btn" id="otNextBtn" style="display: none; margin-top: 15px; background: #3498db;" onclick="nextOtQuestion()">다음 문제로 (Enter)</button>
+            </div>
+
+            <button class="action-btn" style="margin-top: 20px; background:#e74c3c; max-width: 400px;" onclick="quitOnlineTest()">시험 포기하기</button>
+        </div>
+
+        <div id="otResultArea" class="fc-result" style="display: none;">
+            <h2 style="margin-top:0; color:#2c3e50;">테스트 종료! 📝</h2>
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <div style="flex: 1; padding: 15px; background: #e8f8f5; border-radius: 8px;">
+                    <h3 style="color:#27ae60; margin:0;">정답 (O)</h3>
+                    <p id="otResCorrect" style="font-size: 24px; font-weight: bold; margin: 5px 0 0 0;">0</p>
+                </div>
+                <div style="flex: 1; padding: 15px; background: #fdedec; border-radius: 8px;">
+                    <h3 style="color:#c0392b; margin:0;">오답 (X)</h3>
+                    <p id="otResIncorrect" style="font-size: 24px; font-weight: bold; margin: 5px 0 0 0;">0</p>
+                </div>
+            </div>
+            <p style="color: #7f8c8d; font-size: 14px;">※ 결과에 따라 단어의 상태(아는단어/헷갈림)가 자동 업데이트 되었습니다.</p>
+            <button class="action-btn" onclick="finishOnlineTest()">설정으로 돌아가기</button>
+        </div>
+    </div>
+
+    <!-- 5. 학습지 생성 섹션 -->
     <div id="createTest" class="section">
-        <h3>학습지 생성 조건</h3>
+        <h3>학습지 (PDF) 생성 조건</h3>
         <select id="testFolderSelect"><option value="">단어장을 선택하세요</option></select>
         <input type="text" id="testCustomTitle" placeholder="학습지 제목 (입력하지 않으면 자동 생성됩니다)">
 
@@ -277,13 +345,10 @@
     </div>
 </div>
 
-<!-- ================== 개별 단어장 폴더 모달 (스크롤 최적화 & 내부 검색 추가) ================== -->
+<!-- 개별 단어장 폴더 모달 -->
 <div id="folderModal" class="modal">
     <div class="modal-content">
-        <!-- 스크롤 밖의 고정 X 버튼 -->
         <span class="close-btn" onclick="closeModal()">&times;</span>
-        
-        <!-- 모달 전체 스크롤 영역 -->
         <div class="modal-scroll-area">
             <div class="modal-header">
                 <div style="display: flex; align-items: center; gap: 15px;">
@@ -317,8 +382,7 @@
                 <button class="btn-small btn-delete" onclick="bulkDeleteWords()" style="width: 13%; padding: 8px;">일괄 삭제</button>
             </div>
 
-            <!-- 내부 검색 바 -->
-            <input type="text" id="localSearchInput" placeholder="🔍 이 단어장 내에서 단어 검색 " style="margin: 15px 0; padding: 12px; font-size: 15px;" onkeyup="renderWordList(currentFolder)">
+            <input type="text" id="localSearchInput" placeholder="🔍 이 단어장 내에서 단어 검색 (예: ad)" style="margin: 15px 0; padding: 12px; font-size: 15px;" onkeyup="renderWordList(currentFolder)">
 
             <div class="table-responsive-wrapper">
                 <div id="wordListContainer"></div>
@@ -327,15 +391,13 @@
     </div>
 </div>
 
-<!-- ================== 전역 검색(메인화면 돋보기) 모달 ================== -->
+<!-- 전역 검색 모달 -->
 <div id="globalSearchModal" class="modal">
     <div class="modal-content">
-        <!-- 스크롤 밖의 고정 X 버튼 -->
         <span class="close-btn" onclick="closeGlobalSearch()">&times;</span>
-        
         <div class="modal-scroll-area">
             <h2 style="margin-top: 0; color: #2c3e50;">🔍 전체 단어 검색</h2>
-            <input type="text" id="globalSearchInput" placeholder="모든 단어 검색" style="margin-bottom: 15px; padding: 15px; font-size: 16px; border-radius: 8px; border: 2px solid #3498db;" onkeyup="executeGlobalSearch()">
+            <input type="text" id="globalSearchInput" placeholder="모든 단어장을 통틀어 단어 검색 (예: ad)" style="margin-bottom: 15px; padding: 15px; font-size: 16px; border-radius: 8px; border: 2px solid #3498db;" onkeyup="executeGlobalSearch()">
             
             <div class="table-responsive-wrapper">
                 <div id="globalSearchResultContainer">
@@ -364,7 +426,6 @@
 
         try {
             document.getElementById('mainTitle').innerHTML = '단어장 & 학습지 생성기 <span style="font-size:14px; color:#7f8c8d; font-weight:normal;">(동기화 중...)</span>';
-            
             const response = await fetch(SCRIPT_URL);
             const result = await response.json();
             
@@ -383,16 +444,13 @@
     async function saveDB() {
         localStorage.setItem('vocabDB', JSON.stringify(db));
         if (!SCRIPT_URL) return;
-        
         try {
             await fetch(SCRIPT_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify(db)
             });
-        } catch (error) {
-            console.error('네트워크 에러. 로컬 스토리지에 저장됨.', error);
-        }
+        } catch (error) { console.error('네트워크 에러', error); }
     }
 
     function initUI() {
@@ -409,7 +467,7 @@
     }
 
     function updateFolderSelects() {
-        const selects = ['folderSelect', 'testFolderSelect', 'fcFolderSelect'];
+        const selects = ['folderSelect', 'testFolderSelect', 'fcFolderSelect', 'otFolderSelect'];
         selects.forEach(id => {
             const el = document.getElementById(id);
             if(el) {
@@ -423,16 +481,11 @@
         });
     }
 
-    // ----------------- 폴더 관리 로직 ----------------- //
+    // ----------------- 폴더 관리 및 기본 CRUD ----------------- //
     function createFolder() {
         const name = prompt("새로운 단어장 이름을 입력하세요:");
-        if (name && !db[name]) {
-            db[name] = [];
-            saveDB();
-            initUI();
-        } else if (db[name]) {
-            alert("이미 존재하는 단어장입니다.");
-        }
+        if (name && !db[name]) { db[name] = []; saveDB(); initUI(); } 
+        else if (db[name]) { alert("이미 존재하는 단어장입니다."); }
     }
 
     function renderFolders() {
@@ -450,75 +503,43 @@
     function editFolderName() {
         const newName = prompt("새로운 폴더 이름을 입력하세요:", currentFolder);
         if (!newName || newName.trim() === "" || newName === currentFolder) return;
-        
         if (db[newName]) return alert("이미 존재하는 단어장 이름입니다.");
-        
-        db[newName] = db[currentFolder];
-        delete db[currentFolder];
-        
-        currentFolder = newName; 
-        document.getElementById('modalTitle').innerText = newName;
-        
-        saveDB();
-        renderFolders();
-        updateFolderSelects();
+        db[newName] = db[currentFolder]; delete db[currentFolder];
+        currentFolder = newName; document.getElementById('modalTitle').innerText = newName;
+        saveDB(); renderFolders(); updateFolderSelects();
     }
 
     function deleteFolder() {
         if (confirm(`정말 '${currentFolder}' 단어장을 삭제할까요?`)) {
-            delete db[currentFolder];
-            saveDB();
-            closeModal();
-            updateFolderSelects();
+            delete db[currentFolder]; saveDB(); closeModal(); updateFolderSelects();
         }
     }
 
-    // ----------------- 단어 CRUD 로직 ----------------- //
     function saveWords() {
         const folder = document.getElementById('folderSelect').value;
         const text = document.getElementById('wordInput').value;
-
-        if (!folder) return alert('단어장을 선택하거나 새로 생성해주세요!');
+        if (!folder) return alert('단어장을 선택해주세요!');
         if (!text.trim()) return alert('단어를 입력해주세요.');
 
-        const lines = text.split('\n');
-        let count = 0;
-
+        const lines = text.split('\n'); let count = 0;
         lines.forEach(line => {
             if (!line.trim()) return;
             const parts = line.trim().split(/\t|\s{2,}/);
-            
             if (parts.length >= 3 && !isNaN(parseInt(parts[0]))) {
-                const id = parseInt(parts[0]);
-                const en = parts[1].trim();
-                const ko = parts.slice(2).join(' ').trim();
-
+                const id = parseInt(parts[0]); const en = parts[1].trim(); const ko = parts.slice(2).join(' ').trim();
                 const existingIndex = db[folder].findIndex(w => w.id === id);
-                if (existingIndex > -1) {
-                    db[folder].forEach(w => { if (w.id >= id) w.id += 1; });
-                }
-                db[folder].push({id, en, ko, status: ''});
-                count++;
-            } 
-            else if (parts.length >= 2) {
-                const en = parts[0].trim();
-                const ko = parts.slice(1).join(' ').trim();
-                
+                if (existingIndex > -1) db[folder].forEach(w => { if (w.id >= id) w.id += 1; });
+                db[folder].push({id, en, ko, status: ''}); count++;
+            } else if (parts.length >= 2) {
+                const en = parts[0].trim(); const ko = parts.slice(1).join(' ').trim();
                 let nextId = db[folder].length > 0 ? Math.max(...db[folder].map(w => w.id)) + 1 : 1;
-                db[folder].push({id: nextId, en: en, ko: ko, status: ''});
-                count++;
+                db[folder].push({id: nextId, en: en, ko: ko, status: ''}); count++;
             }
         });
-
-        if (count > 0) {
-            saveDB();
-            alert(`${count}개의 단어가 성공적으로 등록/수정 되었습니다!`);
-            document.getElementById('wordInput').value = '';
-            renderFolders();
-        }
+        if (count > 0) { saveDB(); alert(`${count}개의 단어 등록 성공!`); document.getElementById('wordInput').value = ''; renderFolders(); }
     }
 
-    // ----------------- 개별 폴더 모달 창 (내부 검색 연동 및 정렬 로직 업데이트) ----------------- //
+    // ----------------- 모달 리스트 및 검색 ----------------- //
     function openFolderDetail(folderName) {
         currentFolder = folderName;
         document.getElementById('modalTitle').innerText = folderName;
@@ -528,10 +549,7 @@
         document.getElementById('folderModal').style.display = 'block';
     }
 
-    function closeModal() {
-        document.getElementById('folderModal').style.display = 'none';
-        renderFolders();
-    }
+    function closeModal() { document.getElementById('folderModal').style.display = 'none'; renderFolders(); }
 
     function renderWordList(folderName) {
         const container = document.getElementById('wordListContainer');
@@ -539,429 +557,332 @@
         const searchVal = document.getElementById('localSearchInput').value.trim().toLowerCase();
         let words = db[folderName];
         
-        if (!words || words.length === 0) {
-            container.innerHTML = '<p style="text-align:center; color:#888;">등록된 단어가 없습니다.</p>';
-            return;
-        }
+        if (!words || words.length === 0) return container.innerHTML = '<p style="text-align:center; color:#888;">등록된 단어가 없습니다.</p>';
 
-        // 1. 상태 필터 적용
         if (filterVal === 'know') words = words.filter(w => w.status === 'know');
         else if (filterVal === 'unk') words = words.filter(w => w.status === 'unk');
         else if (filterVal === 'none') words = words.filter(w => !w.status || w.status === '');
 
-        // 2. 검색 및 정렬 로직 (starts With 우선순위 반영)
         if (searchVal) {
             words = words.filter(w => w.en.toLowerCase().includes(searchVal) || w.ko.includes(searchVal));
-            
             words.sort((a, b) => {
                 const aStarts = a.en.toLowerCase().startsWith(searchVal);
                 const bStarts = b.en.toLowerCase().startsWith(searchVal);
-                
-                if (aStarts && !bStarts) return -1; // a가 먼저 오도록
-                if (!aStarts && bStarts) return 1;  // b가 먼저 오도록
-                return a.id - b.id; // 동일 조건이면 번호 순
+                if (aStarts && !bStarts) return -1;
+                if (!aStarts && bStarts) return 1;
+                return a.id - b.id; 
             });
-        } else {
-            words.sort((a, b) => a.id - b.id); // 검색어 없을 땐 기본 번호 순
-        }
+        } else { words.sort((a, b) => a.id - b.id); }
 
-        if (words.length === 0) {
-            container.innerHTML = '<p style="text-align:center; color:#888;">해당 조건/검색어에 맞는 단어가 없습니다.</p>';
-            return;
-        }
+        if (words.length === 0) return container.innerHTML = '<p style="text-align:center; color:#888;">결과가 없습니다.</p>';
 
-        let html = '<table class="word-table">';
-        html += '<tr><th width="12%">번호</th><th width="13%">상태</th><th width="30%">영단어</th><th width="30%">뜻</th><th width="15%">관리</th></tr>';
-        
+        let html = '<table class="word-table"><tr><th width="12%">번호</th><th width="13%">상태</th><th width="30%">영단어</th><th width="30%">뜻</th><th width="15%">관리</th></tr>';
         words.forEach(w => {
             let statusBadge = '<span class="status-badge status-none">- 미분류</span>';
             if(w.status === 'know') statusBadge = '<span class="status-badge status-know">O 아는단어</span>';
             if(w.status === 'unk') statusBadge = '<span class="status-badge status-unk">X 헷갈림</span>';
 
             html += `<tr id="row-${w.id}">
-                <td>${w.id}</td>
-                <td>${statusBadge}</td>
-                <td>${w.en}</td>
-                <td>${w.ko}</td>
+                <td>${w.id}</td><td>${statusBadge}</td><td>${w.en}</td><td>${w.ko}</td>
                 <td>
                     <button class="btn-small btn-edit" onclick="editWord('${folderName}', ${w.id})">수정</button>
                     <button class="btn-small btn-delete" onclick="deleteWord('${folderName}', ${w.id})">삭제</button>
                 </td>
             </tr>`;
         });
-        html += '</table>';
-        container.innerHTML = html;
+        html += '</table>'; container.innerHTML = html;
     }
 
     function insertWord() {
-        const idVal = document.getElementById('insertId').value;
-        const enVal = document.getElementById('insertEn').value;
-        const koVal = document.getElementById('insertKo').value;
-        if (!enVal.trim() || !koVal.trim()) return alert("영단어와 뜻을 모두 입력해주세요.");
-        
+        const idVal = document.getElementById('insertId').value; const enVal = document.getElementById('insertEn').value; const koVal = document.getElementById('insertKo').value;
+        if (!enVal.trim() || !koVal.trim()) return alert("입력 오류");
         let newId = parseInt(idVal);
-        if (isNaN(newId)) {
-            newId = db[currentFolder].length > 0 ? Math.max(...db[currentFolder].map(w => w.id)) + 1 : 1;
-            db[currentFolder].push({ id: newId, en: enVal.trim(), ko: koVal.trim(), status: '' });
-        } else {
-            const existingIndex = db[currentFolder].findIndex(w => w.id === newId);
-            if (existingIndex > -1) {
-                db[currentFolder].forEach(w => { if (w.id >= newId) w.id += 1; });
-            }
-            db[currentFolder].push({ id: newId, en: enVal.trim(), ko: koVal.trim(), status: '' });
-        }
-        saveDB();
-        renderWordList(currentFolder);
-        
-        document.getElementById('insertId').value = '';
-        document.getElementById('insertEn').value = '';
-        document.getElementById('insertKo').value = '';
+        if (isNaN(newId)) newId = db[currentFolder].length > 0 ? Math.max(...db[currentFolder].map(w => w.id)) + 1 : 1;
+        else { const exIdx = db[currentFolder].findIndex(w => w.id === newId); if(exIdx > -1) db[currentFolder].forEach(w => { if(w.id >= newId) w.id++; }); }
+        db[currentFolder].push({ id: newId, en: enVal.trim(), ko: koVal.trim(), status: '' });
+        saveDB(); renderWordList(currentFolder);
+        document.getElementById('insertId').value = ''; document.getElementById('insertEn').value = ''; document.getElementById('insertKo').value = '';
     }
 
     function bulkDeleteWords() {
-        const startId = parseInt(document.getElementById('delStartId').value);
-        const endId = parseInt(document.getElementById('delEndId').value);
-        if (isNaN(startId) || isNaN(endId)) return alert("삭제할 시작 번호와 끝 번호를 모두 입력해주세요.");
-        if (startId > endId) return alert("시작 번호가 끝 번호보다 클 수 없습니다.");
-        
+        const startId = parseInt(document.getElementById('delStartId').value); const endId = parseInt(document.getElementById('delEndId').value);
+        if (isNaN(startId) || isNaN(endId)) return; if (startId > endId) return;
         const deleteCount = db[currentFolder].filter(w => w.id >= startId && w.id <= endId).length;
-        if (deleteCount === 0) return alert("해당 구간에 삭제할 단어가 없습니다.");
-        
-        if(confirm(`${startId}번부터 ${endId}번까지 총 ${deleteCount}개의 단어를 삭제하시겠습니까?`)) {
+        if (deleteCount === 0) return;
+        if(confirm(`${deleteCount}개 삭제?`)) {
             db[currentFolder] = db[currentFolder].filter(w => w.id < startId || w.id > endId);
             db[currentFolder].forEach(w => { if (w.id > endId) w.id -= deleteCount; });
-            saveDB();
-            renderWordList(currentFolder);
-            document.getElementById('delStartId').value = '';
-            document.getElementById('delEndId').value = '';
+            saveDB(); renderWordList(currentFolder);
+            document.getElementById('delStartId').value = ''; document.getElementById('delEndId').value = '';
         }
     }
 
     function deleteWord(folderName, id) {
-        if(confirm(`${id}번 단어를 정말로 삭제할까요?`)) {
-            db[folderName] = db[folderName].filter(w => w.id !== id);
-            db[folderName].forEach(w => { if (w.id > id) w.id -= 1; });
-            saveDB();
-            renderWordList(folderName);
-        }
+        if(confirm(`삭제?`)) { db[folderName] = db[folderName].filter(w => w.id !== id); db[folderName].forEach(w => { if (w.id > id) w.id -= 1; }); saveDB(); renderWordList(folderName); }
     }
 
     function editWord(folderName, id) {
-        const row = document.getElementById(`row-${id}`);
-        const word = db[folderName].find(w => w.id === id);
-        
-        row.innerHTML = `
-            <td>${word.id}</td>
-            <td>-</td>
-            <td><input type="text" id="edit-en-${id}" value="${word.en}"></td>
-            <td><input type="text" id="edit-ko-${id}" value="${word.ko}"></td>
-            <td>
-                <button class="btn-small btn-save" onclick="saveEdit('${folderName}', ${id})">저장</button>
-                <button class="btn-small" onclick="renderWordList('${folderName}')">취소</button>
-            </td>
-        `;
+        const row = document.getElementById(`row-${id}`); const word = db[folderName].find(w => w.id === id);
+        row.innerHTML = `<td>${word.id}</td><td>-</td><td><input type="text" id="edit-en-${id}" value="${word.en}"></td><td><input type="text" id="edit-ko-${id}" value="${word.ko}"></td>
+            <td><button class="btn-small btn-save" onclick="saveEdit('${folderName}', ${id})">저장</button><button class="btn-small" onclick="renderWordList('${folderName}')">취소</button></td>`;
     }
 
     function saveEdit(folderName, id) {
-        const newEn = document.getElementById(`edit-en-${id}`).value;
-        const newKo = document.getElementById(`edit-ko-${id}`).value;
-        if(!newEn.trim() || !newKo.trim()) return alert("영단어와 뜻을 모두 입력해주세요.");
-
+        const newEn = document.getElementById(`edit-en-${id}`).value; const newKo = document.getElementById(`edit-ko-${id}`).value;
+        if(!newEn.trim() || !newKo.trim()) return;
         const index = db[folderName].findIndex(w => w.id === id);
-        if(index > -1) {
-            db[folderName][index].en = newEn;
-            db[folderName][index].ko = newKo;
-            saveDB();
-            renderWordList(folderName);
-        }
+        if(index > -1) { db[folderName][index].en = newEn; db[folderName][index].ko = newKo; saveDB(); renderWordList(folderName); }
     }
 
-    // ----------------- 전역(글로벌) 단어 검색 로직 (starts With 우선 정렬 적용) ----------------- //
-    function openGlobalSearch() {
-        document.getElementById('globalSearchModal').style.display = 'block';
-        document.getElementById('globalSearchInput').value = '';
-        document.getElementById('globalSearchInput').focus();
-        document.getElementById('globalSearchResultContainer').innerHTML = '<p style="text-align:center; color:#888;">검색어를 입력하면 결과가 나타납니다.</p>';
-    }
-
-    function closeGlobalSearch() {
-        document.getElementById('globalSearchModal').style.display = 'none';
-        renderFolders(); 
-    }
-
+    // 전역 검색
+    function openGlobalSearch() { document.getElementById('globalSearchModal').style.display = 'block'; document.getElementById('globalSearchInput').value = ''; document.getElementById('globalSearchInput').focus(); document.getElementById('globalSearchResultContainer').innerHTML = '<p style="text-align:center; color:#888;">검색어를 입력하면 결과가 나타납니다.</p>'; }
+    function closeGlobalSearch() { document.getElementById('globalSearchModal').style.display = 'none'; renderFolders(); }
     function executeGlobalSearch() {
         const keyword = document.getElementById('globalSearchInput').value.trim().toLowerCase();
         const container = document.getElementById('globalSearchResultContainer');
-        
-        if (!keyword) {
-            container.innerHTML = '<p style="text-align:center; color:#888;">검색어를 입력하면 결과가 나타납니다.</p>';
-            return;
-        }
+        if (!keyword) return container.innerHTML = '<p style="text-align:center; color:#888;">검색어를 입력하세요.</p>';
 
         let results = [];
-        for (let folder in db) {
-            db[folder].forEach(w => {
-                // 영단어나 뜻에 키워드가 포함되어 있으면 결과에 추가
-                if (w.en.toLowerCase().includes(keyword) || w.ko.includes(keyword)) {
-                    results.push({ folder: folder, ...w });
-                }
-            });
-        }
+        for (let folder in db) { db[folder].forEach(w => { if (w.en.toLowerCase().includes(keyword) || w.ko.includes(keyword)) results.push({ folder: folder, ...w }); }); }
+        if (results.length === 0) return container.innerHTML = '<p style="text-align:center; color:#888;">검색 결과가 없습니다.</p>';
 
-        if (results.length === 0) {
-            container.innerHTML = '<p style="text-align:center; color:#888;">검색 결과가 없습니다.</p>';
-            return;
-        }
-
-        // 검색 결과 정렬 (startsWith 우선, 그다음 단어장, 그다음 id 순)
         results.sort((a, b) => {
-            const aStarts = a.en.toLowerCase().startsWith(keyword);
-            const bStarts = b.en.toLowerCase().startsWith(keyword);
-            
-            if (aStarts && !bStarts) return -1;
-            if (!aStarts && bStarts) return 1;
-            
-            if (a.folder !== b.folder) return a.folder.localeCompare(b.folder);
-            return a.id - b.id;
+            const aStarts = a.en.toLowerCase().startsWith(keyword); const bStarts = b.en.toLowerCase().startsWith(keyword);
+            if (aStarts && !bStarts) return -1; if (!aStarts && bStarts) return 1;
+            if (a.folder !== b.folder) return a.folder.localeCompare(b.folder); return a.id - b.id;
         });
 
-        let html = '<table class="word-table">';
-        html += '<tr><th width="15%">단어장 이름</th><th width="10%">번호</th><th width="13%">상태</th><th width="23%">영단어</th><th width="24%">뜻</th><th width="15%">관리</th></tr>';
-        
+        let html = '<table class="word-table"><tr><th width="15%">단어장 이름</th><th width="10%">번호</th><th width="13%">상태</th><th width="23%">영단어</th><th width="24%">뜻</th><th width="15%">관리</th></tr>';
         results.forEach(w => {
             let statusBadge = '<span class="status-badge status-none">- 미분류</span>';
             if(w.status === 'know') statusBadge = '<span class="status-badge status-know">O</span>';
             if(w.status === 'unk') statusBadge = '<span class="status-badge status-unk">X</span>';
-
-            html += `<tr id="g-row-${w.folder}-${w.id}">
-                <td style="font-size:12px; color:#3498db; font-weight:bold;">${w.folder}</td>
-                <td>${w.id}</td>
-                <td>${statusBadge}</td>
-                <td>${w.en}</td>
-                <td>${w.ko}</td>
-                <td>
-                    <button class="btn-small btn-edit" onclick="editWordGlobal('${w.folder}', ${w.id})">수정</button>
-                    <button class="btn-small btn-delete" onclick="deleteWordGlobal('${w.folder}', ${w.id})">삭제</button>
-                </td>
-            </tr>`;
+            html += `<tr id="g-row-${w.folder}-${w.id}"><td style="font-size:12px; color:#3498db; font-weight:bold;">${w.folder}</td><td>${w.id}</td><td>${statusBadge}</td><td>${w.en}</td><td>${w.ko}</td>
+                <td><button class="btn-small btn-edit" onclick="editWordGlobal('${w.folder}', ${w.id})">수정</button><button class="btn-small btn-delete" onclick="deleteWordGlobal('${w.folder}', ${w.id})">삭제</button></td></tr>`;
         });
-        html += '</table>';
-        container.innerHTML = html;
+        html += '</table>'; container.innerHTML = html;
     }
-
-    // 전역 검색창 안에서의 수정/삭제 (저장 후 검색결과 유지용)
-    function deleteWordGlobal(folderName, id) {
-        if(confirm(`[${folderName}] 단어장의 ${id}번 단어를 정말 삭제할까요?`)) {
-            db[folderName] = db[folderName].filter(w => w.id !== id);
-            db[folderName].forEach(w => { if (w.id > id) w.id -= 1; });
-            saveDB();
-            executeGlobalSearch(); 
-        }
-    }
-
+    function deleteWordGlobal(folderName, id) { if(confirm(`삭제?`)) { db[folderName] = db[folderName].filter(w => w.id !== id); db[folderName].forEach(w => { if (w.id > id) w.id -= 1; }); saveDB(); executeGlobalSearch(); } }
     function editWordGlobal(folderName, id) {
-        const row = document.getElementById(`g-row-${folderName}-${id}`);
-        const word = db[folderName].find(w => w.id === id);
-        
-        row.innerHTML = `
-            <td style="font-size:12px; color:#3498db; font-weight:bold;">${folderName}</td>
-            <td>${word.id}</td>
-            <td>-</td>
-            <td><input type="text" id="g-edit-en-${folderName}-${id}" value="${word.en}"></td>
-            <td><input type="text" id="g-edit-ko-${folderName}-${id}" value="${word.ko}"></td>
-            <td>
-                <button class="btn-small btn-save" onclick="saveEditGlobal('${folderName}', ${id})">저장</button>
-                <button class="btn-small" onclick="executeGlobalSearch()">취소</button>
-            </td>
-        `;
+        const row = document.getElementById(`g-row-${folderName}-${id}`); const word = db[folderName].find(w => w.id === id);
+        row.innerHTML = `<td style="font-size:12px; color:#3498db; font-weight:bold;">${folderName}</td><td>${word.id}</td><td>-</td><td><input type="text" id="g-edit-en-${folderName}-${id}" value="${word.en}"></td><td><input type="text" id="g-edit-ko-${folderName}-${id}" value="${word.ko}"></td>
+            <td><button class="btn-small btn-save" onclick="saveEditGlobal('${folderName}', ${id})">저장</button><button class="btn-small" onclick="executeGlobalSearch()">취소</button></td>`;
     }
-
     function saveEditGlobal(folderName, id) {
-        const newEn = document.getElementById(`g-edit-en-${folderName}-${id}`).value;
-        const newKo = document.getElementById(`g-edit-ko-${folderName}-${id}`).value;
-        if(!newEn.trim() || !newKo.trim()) return alert("영단어와 뜻을 모두 입력해주세요.");
-
-        const index = db[folderName].findIndex(w => w.id === id);
-        if(index > -1) {
-            db[folderName][index].en = newEn;
-            db[folderName][index].ko = newKo;
-            saveDB();
-            executeGlobalSearch();
-        }
+        const newEn = document.getElementById(`g-edit-en-${folderName}-${id}`).value; const newKo = document.getElementById(`g-edit-ko-${folderName}-${id}`).value;
+        if(!newEn.trim() || !newKo.trim()) return; const index = db[folderName].findIndex(w => w.id === id);
+        if(index > -1) { db[folderName][index].en = newEn; db[folderName][index].ko = newKo; saveDB(); executeGlobalSearch(); }
     }
 
     // ----------------- 플래시카드 로직 ----------------- //
-    let fcList = [];
-    let fcIndex = 0;
-    let fcKnown = [];
-    let fcUnknown = [];
-    let fcIsDragging = false;
-    let fcStartX = 0;
-    let fcCurrentX = 0;
-    let fcDidDrag = false;
-
-    const fcSwipeWrapper = document.getElementById('fcSwipeWrapper');
-    const fcCard = document.getElementById('fcCard');
+    let fcList = [], fcIndex = 0, fcKnown = [], fcUnknown = [];
+    let fcIsDragging = false, fcStartX = 0, fcCurrentX = 0, fcDidDrag = false;
+    const fcSwipeWrapper = document.getElementById('fcSwipeWrapper'), fcCard = document.getElementById('fcCard');
 
     function initFlashcards() {
         const folder = document.getElementById('fcFolderSelect').value;
-        if(!folder) return alert('단어장을 선택해주세요!');
-        
-        const startStr = document.getElementById('fcStartNum').value;
-        const endStr = document.getElementById('fcEndNum').value;
-        const order = document.getElementById('fcOrderSelect').value;
-        const statusFilter = document.getElementById('fcStatusFilter').value; 
-        
-        const start = startStr ? parseInt(startStr) : 0;
-        const end = endStr ? parseInt(endStr) : 999999;
+        if(!folder) return alert('선택해주세요!');
+        const start = parseInt(document.getElementById('fcStartNum').value) || 0; const end = parseInt(document.getElementById('fcEndNum').value) || 999999;
+        const filter = document.getElementById('fcStatusFilter').value, order = document.getElementById('fcOrderSelect').value;
+
+        let tw = db[folder].filter(w => w.id >= start && w.id <= end);
+        if (filter === 'know') tw = tw.filter(w => w.status === 'know'); else if (filter === 'unk') tw = tw.filter(w => w.status === 'unk'); else if (filter === 'none') tw = tw.filter(w => !w.status || w.status === '');
+        if(tw.length === 0) return alert('단어가 없습니다.');
+
+        fcList = order === 'sequential' ? [...tw].sort((a, b) => a.id - b.id) : [...tw].sort(() => 0.5 - Math.random());
+        fcIndex = 0; fcKnown = []; fcUnknown = [];
+        document.getElementById('fcSetupArea').style.display = 'none'; document.getElementById('fcResult').style.display = 'none'; document.getElementById('fcArea').style.display = 'flex';
+        renderFlashcard();
+    }
+    function renderFlashcard() {
+        if(fcIndex >= fcList.length) return showFlashcardResult();
+        const cw = fcList[fcIndex]; document.getElementById('fcProgress').innerText = `카드 ${fcIndex + 1} / ${fcList.length}`;
+        fcCard.style.transition = 'none'; fcCard.classList.remove('flipped'); void fcCard.offsetWidth;
+        document.getElementById('fcFront').innerText = cw.en; document.getElementById('fcBack').innerText = cw.ko;
+        fcSwipeWrapper.style.transition = 'none'; fcSwipeWrapper.style.transform = `translateX(0px) rotateZ(0deg) scale(1)`; fcCard.style.transition = '';
+    }
+    function toggleFlip() { if(!fcDidDrag) fcCard.classList.toggle('flipped'); }
+    function recordSwipe(dir) {
+        const w = fcList[fcIndex]; w.status = dir === 'right' ? 'know' : 'unk';
+        dir === 'right' ? fcKnown.push(w) : fcUnknown.push(w);
+        fcIndex++; setTimeout(renderFlashcard, 300); 
+    }
+    function animateSwipeAndNext(dir) {
+        fcSwipeWrapper.style.transition = 'transform 0.4s ease-out';
+        fcSwipeWrapper.style.transform = dir === 'right' ? `translateX(${window.innerWidth}px) rotateZ(20deg) scale(0.9)` : `translateX(-${window.innerWidth}px) rotateZ(-20deg) scale(0.9)`;
+        recordSwipe(dir);
+    }
+    fcSwipeWrapper.addEventListener('mousedown', fcDragStart); fcSwipeWrapper.addEventListener('touchstart', fcDragStart, {passive: true});
+    document.addEventListener('mousemove', fcDragMove); document.addEventListener('touchmove', fcDragMove, {passive: true});
+    document.addEventListener('mouseup', fcDragEnd); document.addEventListener('touchend', fcDragEnd);
+    function fcDragStart(e) { if(e.target.closest('.fc-controls') || fcIndex >= fcList.length) return; fcIsDragging = true; fcDidDrag = false; fcStartX = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX; fcSwipeWrapper.style.transition = 'none'; }
+    function fcDragMove(e) { if (!fcIsDragging) return; fcCurrentX = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX; const diff = fcCurrentX - fcStartX; if(Math.abs(diff) > 10) fcDidDrag = true; fcSwipeWrapper.style.transform = `translateX(${diff}px) rotateZ(${diff * 0.05}deg)`; }
+    function fcDragEnd(e) { if (!fcIsDragging) return; fcIsDragging = false; if(!fcDidDrag) return; const diff = fcCurrentX - fcStartX; fcSwipeWrapper.style.transition = 'transform 0.3s ease-out'; if (diff > 100) animateSwipeAndNext('right'); else if (diff < -100) animateSwipeAndNext('left'); else fcSwipeWrapper.style.transform = `translateX(0px) rotateZ(0deg)`; }
+    function showFlashcardResult() {
+        saveDB(); document.getElementById('fcArea').style.display = 'none'; document.getElementById('fcResult').style.display = 'block';
+        document.getElementById('fcResKnowCount').innerText = fcKnown.length; document.getElementById('fcResUnkCount').innerText = fcUnknown.length;
+        const ul = document.getElementById('fcUnkList'); ul.innerHTML = '';
+        if(fcUnknown.length > 0) {
+            let h = '<h4 style="color:#555;">다시 복습할 단어:</h4>'; fcUnknown.forEach(w => { h += `<div class="fc-word-pill unk">${w.en} : ${w.ko}</div>`; }); ul.innerHTML = h; document.getElementById('fcRetryBtn').style.display = 'inline-block';
+        } else { ul.innerHTML = '<p style="color:#27ae60; font-weight:bold;">모두 외웠습니다!</p>'; document.getElementById('fcRetryBtn').style.display = 'none'; }
+    }
+    function retryUnknown() { fcList = document.getElementById('fcOrderSelect').value === 'sequential' ? [...fcUnknown].sort((a,b)=>a.id-b.id) : [...fcUnknown].sort(()=>0.5-Math.random()); fcIndex = 0; fcKnown = []; fcUnknown = []; document.getElementById('fcResult').style.display = 'none'; document.getElementById('fcArea').style.display = 'flex'; renderFlashcard(); }
+    function quitFlashcards() { document.getElementById('fcArea').style.display = 'none'; document.getElementById('fcSetupArea').style.display = 'block'; saveDB(); }
+
+    // ----------------- ★ NEW: 자체 온라인 테스트 로직 ★ ----------------- //
+    let testQuestions = [];
+    let currentTestIdx = 0;
+    let otStats = { correct: 0, incorrect: 0 };
+    let otIsWaitingForNext = false; // 엔터키 제어용 상태 변수
+
+    function initOnlineTest() {
+        const folder = document.getElementById('otFolderSelect').value;
+        if(!folder) return alert('단어장을 선택해주세요.');
+
+        const start = parseInt(document.getElementById('otStartNum').value) || 0;
+        const end = parseInt(document.getElementById('otEndNum').value) || 999999;
+        const statusFilter = document.getElementById('otStatusFilter').value; 
+        const overlapMode = document.getElementById('otOverlapMode').value;
+        const enToKoCount = parseInt(document.getElementById('otEnToKoCount').value) || 0;
+        const koToEnCount = parseInt(document.getElementById('otKoToEnCount').value) || 0;
 
         let targetWords = db[folder].filter(w => w.id >= start && w.id <= end);
-        
         if (statusFilter === 'know') targetWords = targetWords.filter(w => w.status === 'know');
         else if (statusFilter === 'unk') targetWords = targetWords.filter(w => w.status === 'unk');
         else if (statusFilter === 'none') targetWords = targetWords.filter(w => !w.status || w.status === '');
 
-        if(targetWords.length === 0) return alert('해당 범위와 조건에 맞는 단어가 없습니다.');
+        if (targetWords.length === 0) return alert('조건에 맞는 단어가 없습니다.');
 
-        if (order === 'sequential') fcList = [...targetWords].sort((a, b) => a.id - b.id);
-        else fcList = [...targetWords].sort(() => 0.5 - Math.random());
-        
-        fcIndex = 0;
-        fcKnown = [];
-        fcUnknown = [];
+        let poolEnToKo = []; let poolKoToEn = [];
+        const totalReq = enToKoCount + koToEnCount;
 
-        document.getElementById('fcSetupArea').style.display = 'none';
-        document.getElementById('fcResult').style.display = 'none';
-        document.getElementById('fcArea').style.display = 'flex';
-        
-        renderFlashcard();
-    }
-
-    function renderFlashcard() {
-        if(fcIndex >= fcList.length) {
-            showFlashcardResult();
-            return;
-        }
-
-        const currentWord = fcList[fcIndex];
-        document.getElementById('fcProgress').innerText = `카드 ${fcIndex + 1} / ${fcList.length}`;
-        
-        fcCard.style.transition = 'none';
-        fcCard.classList.remove('flipped');
-        void fcCard.offsetWidth;
-
-        document.getElementById('fcFront').innerText = currentWord.en;
-        document.getElementById('fcBack').innerText = currentWord.ko;
-
-        fcSwipeWrapper.style.transition = 'none';
-        fcSwipeWrapper.style.transform = `translateX(0px) rotateZ(0deg) scale(1)`;
-        fcCard.style.transition = '';
-    }
-
-    function toggleFlip() {
-        if(!fcDidDrag) fcCard.classList.toggle('flipped');
-    }
-
-    function recordSwipe(direction) {
-        const word = fcList[fcIndex];
-        if(direction === 'right') { 
-            word.status = 'know'; 
-            fcKnown.push(word);
-        } else { 
-            word.status = 'unk'; 
-            fcUnknown.push(word);
-        }
-        fcIndex++;
-        setTimeout(renderFlashcard, 300); 
-    }
-
-    function animateSwipeAndNext(direction) {
-        fcSwipeWrapper.style.transition = 'transform 0.4s ease-out';
-        if(direction === 'right') {
-            fcSwipeWrapper.style.transform = `translateX(${window.innerWidth}px) rotateZ(20deg) scale(0.9)`;
-            recordSwipe('right');
+        if (overlapMode === 'no_overlap') {
+            if (totalReq > targetWords.length) return alert(`단어 수(${targetWords.length})가 부족합니다.`);
+            const shuffled = [...targetWords].sort(() => 0.5 - Math.random());
+            poolEnToKo = shuffled.slice(0, enToKoCount).map(w => ({ type: 'enToKo', wordRef: w }));
+            poolKoToEn = shuffled.slice(enToKoCount, totalReq).map(w => ({ type: 'koToEn', wordRef: w }));
         } else {
-            fcSwipeWrapper.style.transform = `translateX(-${window.innerWidth}px) rotateZ(-20deg) scale(0.9)`;
-            recordSwipe('left');
+            if (enToKoCount > targetWords.length || koToEnCount > targetWords.length) return alert(`단어 수(${targetWords.length})가 부족합니다.`);
+            poolEnToKo = [...targetWords].sort(() => 0.5 - Math.random()).slice(0, enToKoCount).map(w => ({ type: 'enToKo', wordRef: w }));
+            poolKoToEn = [...targetWords].sort(() => 0.5 - Math.random()).slice(0, koToEnCount).map(w => ({ type: 'koToEn', wordRef: w }));
+        }
+
+        testQuestions = [...poolEnToKo, ...poolKoToEn].sort(() => 0.5 - Math.random()); // 전체 섞기
+        if(testQuestions.length === 0) return alert('문제 수를 입력해주세요.');
+
+        currentTestIdx = 0;
+        otStats = { correct: 0, incorrect: 0 };
+        otIsWaitingForNext = false;
+
+        document.getElementById('otSetupArea').style.display = 'none';
+        document.getElementById('otResultArea').style.display = 'none';
+        document.getElementById('otArea').style.display = 'flex';
+        
+        renderOtQuestion();
+    }
+
+    function renderOtQuestion() {
+        if(currentTestIdx >= testQuestions.length) return finishTestUi();
+        
+        const q = testQuestions[currentTestIdx];
+        document.getElementById('otProgress').innerText = `문제 ${currentTestIdx + 1} / ${testQuestions.length}`;
+        
+        const typeText = q.type === 'koToEn' ? "뜻을 보고 영단어를 적으세요" : "영단어를 보고 뜻을 적으세요";
+        const promptText = q.type === 'koToEn' ? q.wordRef.ko : q.wordRef.en;
+        
+        document.getElementById('otQuestionType').innerText = typeText;
+        document.getElementById('otQuestionText').innerText = promptText;
+        
+        // UI 초기화
+        const inputEl = document.getElementById('otAnswerInput');
+        inputEl.value = ''; inputEl.disabled = false; inputEl.focus();
+        inputEl.style.display = 'block';
+        
+        document.getElementById('otSubmitBtn').style.display = 'block';
+        document.getElementById('otFeedbackArea').style.display = 'none';
+        document.getElementById('otSelfEvalBtns').style.display = 'none';
+        document.getElementById('otNextBtn').style.display = 'none';
+        
+        otIsWaitingForNext = false;
+    }
+
+    function handleOtKeyPress(e) {
+        if(e.key === 'Enter') {
+            if(otIsWaitingForNext) nextOtQuestion();
+            else if(document.getElementById('otSubmitBtn').style.display !== 'none') submitOtAnswer();
         }
     }
 
-    fcSwipeWrapper.addEventListener('mousedown', fcDragStart);
-    fcSwipeWrapper.addEventListener('touchstart', fcDragStart, {passive: true});
-    document.addEventListener('mousemove', fcDragMove);
-    document.addEventListener('touchmove', fcDragMove, {passive: true});
-    document.addEventListener('mouseup', fcDragEnd);
-    document.addEventListener('touchend', fcDragEnd);
+    function submitOtAnswer() {
+        const q = testQuestions[currentTestIdx];
+        const userAns = document.getElementById('otAnswerInput').value.trim();
+        if(!userAns) return alert('답을 입력해주세요.');
 
-    function fcDragStart(e) {
-        if(e.target.closest('.fc-controls') || fcIndex >= fcList.length) return;
-        fcIsDragging = true;
-        fcDidDrag = false;
-        fcStartX = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
-        fcSwipeWrapper.style.transition = 'none';
-    }
-
-    function fcDragMove(e) {
-        if (!fcIsDragging) return;
-        fcCurrentX = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
-        const diffX = fcCurrentX - fcStartX;
-        if(Math.abs(diffX) > 10) fcDidDrag = true; 
-        const rotateZ = diffX * 0.05; 
-        fcSwipeWrapper.style.transform = `translateX(${diffX}px) rotateZ(${rotateZ}deg)`;
-    }
-
-    function fcDragEnd(e) {
-        if (!fcIsDragging) return;
-        fcIsDragging = false;
-        if(!fcDidDrag) return; 
-
-        const diffX = fcCurrentX - fcStartX;
-        fcSwipeWrapper.style.transition = 'transform 0.3s ease-out';
+        const inputEl = document.getElementById('otAnswerInput');
+        inputEl.disabled = true; // 중복 입력 방지
+        document.getElementById('otSubmitBtn').style.display = 'none';
         
-        if (diffX > 100) animateSwipeAndNext('right');
-        else if (diffX < -100) animateSwipeAndNext('left');
-        else fcSwipeWrapper.style.transform = `translateX(0px) rotateZ(0deg)`;
-    }
+        const fbArea = document.getElementById('otFeedbackArea');
+        fbArea.style.display = 'block';
 
-    function showFlashcardResult() {
-        saveDB(); 
-
-        document.getElementById('fcArea').style.display = 'none';
-        document.getElementById('fcResult').style.display = 'block';
-        
-        document.getElementById('fcResKnowCount').innerText = fcKnown.length;
-        document.getElementById('fcResUnkCount').innerText = fcUnknown.length;
-
-        const unkListDiv = document.getElementById('fcUnkList');
-        unkListDiv.innerHTML = '';
-        
-        if(fcUnknown.length > 0) {
-            let html = '<h4 style="color:#555;">다시 복습할 단어:</h4>';
-            fcUnknown.forEach(w => {
-                html += `<div class="fc-word-pill unk">${w.en} : ${w.ko}</div>`;
-            });
-            unkListDiv.innerHTML = html;
-            document.getElementById('fcRetryBtn').style.display = 'inline-block';
+        if(q.type === 'koToEn') {
+            // 한->영: 자동 채점 (대소문자 무시)
+            const isCorrect = userAns.toLowerCase() === q.wordRef.en.toLowerCase();
+            if(isCorrect) {
+                fbArea.className = 'test-feedback feedback-correct';
+                fbArea.innerHTML = '✅ 정답입니다!';
+                q.wordRef.status = 'know'; otStats.correct++;
+            } else {
+                fbArea.className = 'test-feedback feedback-incorrect';
+                fbArea.innerHTML = `❌ 틀렸습니다!<br><span style="font-size:14px; color:#555;">정답:</span> ${q.wordRef.en}`;
+                q.wordRef.status = 'unk'; otStats.incorrect++;
+            }
+            document.getElementById('otNextBtn').style.display = 'block';
+            otIsWaitingForNext = true;
+            document.getElementById('otNextBtn').focus();
         } else {
-            unkListDiv.innerHTML = '<p style="color:#27ae60; font-weight:bold;">모든 단어를 완벽하게 외웠습니다!</p>';
-            document.getElementById('fcRetryBtn').style.display = 'none';
+            // 영->한: 자가 채점
+            inputEl.style.display = 'none';
+            fbArea.className = 'test-feedback feedback-selfval';
+            fbArea.innerHTML = `<span style="font-size:14px; color:#7f8c8d;">내 답안:</span> <b style="color:#e67e22;">${userAns}</b><br><br><span style="font-size:14px; color:#7f8c8d;">실제 뜻:</span> <b>${q.wordRef.ko}</b>`;
+            document.getElementById('otSelfEvalBtns').style.display = 'flex';
         }
     }
 
-    function retryUnknown() {
-        const order = document.getElementById('fcOrderSelect').value;
-        if (order === 'sequential') fcList = [...fcUnknown].sort((a, b) => a.id - b.id);
-        else fcList = [...fcUnknown].sort(() => 0.5 - Math.random());
-        
-        fcIndex = 0;
-        fcKnown = [];
-        fcUnknown = [];
-        document.getElementById('fcResult').style.display = 'none';
-        document.getElementById('fcArea').style.display = 'flex';
-        renderFlashcard();
+    function processOtResult(isCorrect) {
+        const q = testQuestions[currentTestIdx];
+        if(isCorrect) { q.wordRef.status = 'know'; otStats.correct++; }
+        else { q.wordRef.status = 'unk'; otStats.incorrect++; }
+        nextOtQuestion();
     }
 
-    // ----------------- 학습지 및 정답지 생성 로직 ----------------- //
+    function nextOtQuestion() {
+        currentTestIdx++;
+        renderOtQuestion();
+    }
+
+    function finishTestUi() {
+        saveDB(); // 변경된 status 저장
+        document.getElementById('otArea').style.display = 'none';
+        document.getElementById('otResultArea').style.display = 'block';
+        document.getElementById('otResCorrect').innerText = otStats.correct;
+        document.getElementById('otResIncorrect').innerText = otStats.incorrect;
+    }
+
+    function quitOnlineTest() {
+        if(confirm('시험을 중간에 포기하시겠습니까? 지금까지 푼 결과만 저장됩니다.')){
+            saveDB();
+            document.getElementById('otArea').style.display = 'none';
+            document.getElementById('otSetupArea').style.display = 'block';
+        }
+    }
+
+    function finishOnlineTest() {
+        document.getElementById('otResultArea').style.display = 'none';
+        document.getElementById('otSetupArea').style.display = 'block';
+    }
+
+    // ----------------- 학습지(PDF) 생성 로직 ----------------- //
     function generateTest() {
         const folder = document.getElementById('testFolderSelect').value;
         const customTitle = document.getElementById('testCustomTitle').value.trim();
@@ -978,41 +899,28 @@
         if (isNaN(start) || isNaN(end)) return alert('출제 범위를 정확히 입력해주세요.');
 
         let targetWords = db[folder].filter(w => w.id >= start && w.id <= end);
-        
         if (statusFilter === 'know') targetWords = targetWords.filter(w => w.status === 'know');
         else if (statusFilter === 'unk') targetWords = targetWords.filter(w => w.status === 'unk');
         else if (statusFilter === 'none') targetWords = targetWords.filter(w => !w.status || w.status === '');
 
         if (targetWords.length === 0) return alert('조건에 맞는 단어가 없습니다.');
 
-        let enToKoQuestions = [];
-        let koToEnQuestions = [];
-        const totalQuestions = enToKo + koToEn;
+        let enToKoQuestions = []; let koToEnQuestions = []; const totalQuestions = enToKo + koToEn;
 
         if (overlapMode === 'no_overlap') {
-            if (totalQuestions > targetWords.length) {
-                return alert(`안내: 총 출제 문제 수(${totalQuestions}문제)가 조건에 맞는 출제 범위 개수(${targetWords.length}개)를 넘어섭니다!\n중복 출제 허용 옵션을 선택하거나 문제 수를 줄여주세요.`);
-            }
+            if (totalQuestions > targetWords.length) return alert(`안내: 문제 수 부족. 중복을 허용하세요.`);
             const shuffled = [...targetWords].sort(() => 0.5 - Math.random());
-            enToKoQuestions = shuffled.slice(0, enToKo);
-            koToEnQuestions = shuffled.slice(enToKo, totalQuestions);
+            enToKoQuestions = shuffled.slice(0, enToKo); koToEnQuestions = shuffled.slice(enToKo, totalQuestions);
         } else {
-            if (enToKo > targetWords.length || koToEn > targetWords.length) {
-                return alert(`안내: 각 유형의 문제 수가 조건에 맞는 출제 범위 개수(${targetWords.length}개)를 넘을 수 없습니다.`);
-            }
-            const shuffledForEnToKo = [...targetWords].sort(() => 0.5 - Math.random());
-            enToKoQuestions = shuffledForEnToKo.slice(0, enToKo);
-            
-            const shuffledForKoToEn = [...targetWords].sort(() => 0.5 - Math.random());
-            koToEnQuestions = shuffledForKoToEn.slice(0, koToEn);
+            if (enToKo > targetWords.length || koToEn > targetWords.length) return alert(`안내: 문제 수가 대상 단어 수 초과.`);
+            enToKoQuestions = [...targetWords].sort(() => 0.5 - Math.random()).slice(0, enToKo);
+            koToEnQuestions = [...targetWords].sort(() => 0.5 - Math.random()).slice(0, koToEn);
         }
 
         let finalTitle = customTitle;
         if (!finalTitle) {
             let statusText = "전체 단어";
-            if (statusFilter === 'know') statusText = "아는 단어";
-            else if (statusFilter === 'unk') statusText = "헷갈리는 단어";
-            else if (statusFilter === 'none') statusText = "미분류 단어";
+            if (statusFilter === 'know') statusText = "아는 단어"; else if (statusFilter === 'unk') statusText = "헷갈리는 단어"; else if (statusFilter === 'none') statusText = "미분류 단어";
             finalTitle = `[${folder}] ${start}번~${end}번 (${statusText}) - 총 ${totalQuestions}문제`;
         }
 
@@ -1022,73 +930,36 @@
 
     function renderWorksheet(enToKo, koToEn, title) {
         const output = document.getElementById('worksheetOutput');
-        
         let html = '<div id="pdf-content" style="background: white;">';
         html += `<h2 style="text-align:center; margin: 5px 0 20px 0;">${title}</h2>`;
         
-        let globalQNum = 1; 
-        let globalAnsNum = 1; 
+        let globalQNum = 1; let globalAnsNum = 1; 
         let answerHtml = '<div class="answer-key"><h2 style="text-align:center; margin-top: 0;">✅ 정답지</h2>';
 
         function buildTableHTML(questions, type) {
             if (questions.length === 0) return '';
             let tHtml = '<table class="worksheet-table">';
             for (let i = 0; i < questions.length; i += 2) {
-                let q1 = questions[i];
-                let q2 = questions[i + 1];
+                let q1 = questions[i]; let q2 = questions[i + 1];
                 tHtml += '<tr>';
-                
-                let num1 = globalQNum + i;
-                let text1 = type === 'enToKo' ? q1.en : q1.ko;
-                tHtml += `<td class="q-cell">${num1}. ${text1}</td><td class="a-cell"></td>`;
-                
-                if (q2) {
-                    let num2 = globalQNum + i + 1;
-                    let text2 = type === 'enToKo' ? q2.en : q2.ko;
-                    tHtml += `<td class="q-cell">${num2}. ${text2}</td><td class="a-cell"></td>`;
-                } else {
-                    tHtml += `<td class="q-cell"></td><td class="a-cell"></td>`;
-                }
+                tHtml += `<td class="q-cell">${globalQNum + i}. ${type === 'enToKo' ? q1.en : q1.ko}</td><td class="a-cell"></td>`;
+                if (q2) tHtml += `<td class="q-cell">${globalQNum + i + 1}. ${type === 'enToKo' ? q2.en : q2.ko}</td><td class="a-cell"></td>`;
+                else tHtml += `<td class="q-cell"></td><td class="a-cell"></td>`;
                 tHtml += '</tr>';
             }
-            globalQNum += questions.length; 
-            tHtml += '</table>';
-            return tHtml;
+            globalQNum += questions.length; tHtml += '</table>'; return tHtml;
         }
 
-        if (enToKo.length > 0) {
-            html += '<h3>Part 1. 영단어를 보고 뜻을 적으세요.</h3>';
-            html += buildTableHTML(enToKo, 'enToKo');
-            answerHtml += '<h3>Part 1</h3><div class="answer-grid">';
-            enToKo.forEach(q => { answerHtml += `<div class="answer-item"><b>${globalAnsNum++}.</b> ${q.ko}</div>`; });
-            answerHtml += '</div>';
-        }
+        if (enToKo.length > 0) { html += '<h3>Part 1. 영단어를 보고 뜻을 적으세요.</h3>'; html += buildTableHTML(enToKo, 'enToKo'); answerHtml += '<h3>Part 1</h3><div class="answer-grid">'; enToKo.forEach(q => { answerHtml += `<div class="answer-item"><b>${globalAnsNum++}.</b> ${q.ko}</div>`; }); answerHtml += '</div>'; }
+        if (koToEn.length > 0) { html += '<h3>Part 2. 뜻을 보고 영단어를 적으세요.</h3>'; html += buildTableHTML(koToEn, 'koToEn'); answerHtml += '<h3>Part 2</h3><div class="answer-grid">'; koToEn.forEach(q => { answerHtml += `<div class="answer-item"><b>${globalAnsNum++}.</b> ${q.en}</div>`; }); answerHtml += '</div>'; }
 
-        if (koToEn.length > 0) {
-            html += '<h3>Part 2. 뜻을 보고 영단어를 적으세요.</h3>';
-            html += buildTableHTML(koToEn, 'koToEn');
-            answerHtml += '<h3>Part 2</h3><div class="answer-grid">';
-            koToEn.forEach(q => { answerHtml += `<div class="answer-item"><b>${globalAnsNum++}.</b> ${q.en}</div>`; });
-            answerHtml += '</div>';
-        }
-
-        answerHtml += '</div>'; 
-        html += answerHtml; 
-        html += '</div>'; 
-        output.innerHTML = html;
+        answerHtml += '</div>'; html += answerHtml; html += '</div>'; output.innerHTML = html;
     }
 
     function downloadPDF() {
         window.scrollTo(0, 0); 
         const element = document.getElementById('pdf-content');
-        const opt = {
-            margin:       [8, 15, 15, 15], 
-            filename:     '단어장_학습지.pdf',
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak:    { mode: ['css', 'legacy'] }
-        };
+        const opt = { margin: [8, 15, 15, 15], filename: '단어장_학습지.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }, pagebreak: { mode: ['css', 'legacy'] } };
         html2pdf().set(opt).from(element).save();
     }
 

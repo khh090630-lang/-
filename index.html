@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <!-- 모바일 UI 최적화를 위한 뷰포트 메타 태그 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>나만의 단어장 & 학습지 생성기</title>
     <!-- PDF 다운로드를 위한 html2pdf 라이브러리 추가 -->
@@ -228,7 +229,7 @@
         </div>
     </div>
 
-    <!-- ★ NEW: 4. 온라인 테스트 섹션 ★ -->
+    <!-- 4. 온라인 테스트 섹션 -->
     <div id="onlineTestTab" class="section">
         <h3>자체 온라인 테스트</h3>
         
@@ -259,7 +260,10 @@
                 <input type="number" id="otKoToEnCount" placeholder="한->영 문제 수 (예: 5)">
             </div>
             
-            <button class="action-btn" style="margin-top: 10px;" onclick="initOnlineTest()">테스트 시작하기</button>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button class="action-btn" onclick="initOnlineTest()">테스트 시작하기</button>
+                <button class="action-btn" style="background: #f39c12;" onclick="initOnlineTest(true)">모든 단어 출제</button>
+            </div>
         </div>
 
         <div id="otArea" class="test-area" style="display: none;">
@@ -338,6 +342,9 @@
         
         <div style="display: flex; gap: 10px; margin-top: 10px;">
             <button class="action-btn" onclick="generateTest()">학습지 만들기</button>
+            <button class="action-btn" style="background: #f39c12;" onclick="generateTest(true)">모든 단어 출제</button>
+        </div>
+        <div style="margin-top: 10px;">
             <button class="action-btn" id="printBtn" style="display: none; background: #e74c3c;" onclick="downloadPDF()">PDF 파일로 다운로드</button>
         </div>
 
@@ -729,13 +736,13 @@
     function retryUnknown() { fcList = document.getElementById('fcOrderSelect').value === 'sequential' ? [...fcUnknown].sort((a,b)=>a.id-b.id) : [...fcUnknown].sort(()=>0.5-Math.random()); fcIndex = 0; fcKnown = []; fcUnknown = []; document.getElementById('fcResult').style.display = 'none'; document.getElementById('fcArea').style.display = 'flex'; renderFlashcard(); }
     function quitFlashcards() { document.getElementById('fcArea').style.display = 'none'; document.getElementById('fcSetupArea').style.display = 'block'; saveDB(); }
 
-    // ----------------- ★ NEW: 자체 온라인 테스트 로직 ★ ----------------- //
+    // ----------------- 온라인 테스트 로직 ----------------- //
     let testQuestions = [];
     let currentTestIdx = 0;
     let otStats = { correct: 0, incorrect: 0 };
-    let otIsWaitingForNext = false; // 엔터키 제어용 상태 변수
+    let otIsWaitingForNext = false; 
 
-    function initOnlineTest() {
+    function initOnlineTest(useMax = false) {
         const folder = document.getElementById('otFolderSelect').value;
         if(!folder) return alert('단어장을 선택해주세요.');
 
@@ -743,8 +750,10 @@
         const end = parseInt(document.getElementById('otEndNum').value) || 999999;
         const statusFilter = document.getElementById('otStatusFilter').value; 
         const overlapMode = document.getElementById('otOverlapMode').value;
-        const enToKoCount = parseInt(document.getElementById('otEnToKoCount').value) || 0;
-        const koToEnCount = parseInt(document.getElementById('otKoToEnCount').value) || 0;
+        let enToKoCount = parseInt(document.getElementById('otEnToKoCount').value) || 0;
+        let koToEnCount = parseInt(document.getElementById('otKoToEnCount').value) || 0;
+
+        if (!useMax && enToKoCount === 0 && koToEnCount === 0) return alert('문제 수를 입력하거나 [모든 단어 출제] 버튼을 눌러주세요.');
 
         let targetWords = db[folder].filter(w => w.id >= start && w.id <= end);
         if (statusFilter === 'know') targetWords = targetWords.filter(w => w.status === 'know');
@@ -753,22 +762,53 @@
 
         if (targetWords.length === 0) return alert('조건에 맞는 단어가 없습니다.');
 
+        if (useMax) {
+            if (overlapMode === 'no_overlap') {
+                enToKoCount = Math.ceil(targetWords.length / 2);
+                koToEnCount = Math.floor(targetWords.length / 2);
+            } else {
+                enToKoCount = targetWords.length;
+                koToEnCount = targetWords.length;
+            }
+            alert(`안내: 가능한 모든 단어(${targetWords.length}개)를 활용하여 총 ${enToKoCount + koToEnCount}문제를 출제합니다.`);
+            document.getElementById('otEnToKoCount').value = enToKoCount;
+            document.getElementById('otKoToEnCount').value = koToEnCount;
+        } else {
+            let totalReq = enToKoCount + koToEnCount;
+            if (overlapMode === 'no_overlap') {
+                if (totalReq > targetWords.length) {
+                    alert(`안내: 요청하신 문제 수(${totalReq}문제)가 출제 가능한 단어 수(${targetWords.length}개)를 초과했습니다.\n가능한 최대 개수로 자동 조정하여 출제합니다.`);
+                    let ratio = enToKoCount / totalReq;
+                    enToKoCount = Math.round(targetWords.length * ratio);
+                    koToEnCount = targetWords.length - enToKoCount;
+                    document.getElementById('otEnToKoCount').value = enToKoCount;
+                    document.getElementById('otKoToEnCount').value = koToEnCount;
+                }
+            } else {
+                let adjusted = false;
+                if (enToKoCount > targetWords.length) { enToKoCount = targetWords.length; adjusted = true; }
+                if (koToEnCount > targetWords.length) { koToEnCount = targetWords.length; adjusted = true; }
+                if (adjusted) {
+                    alert(`안내: 요청하신 문제 수가 출제 가능한 단어 수(${targetWords.length}개)를 초과했습니다.\n가능한 최대 개수로 자동 조정하여 출제합니다.`);
+                    document.getElementById('otEnToKoCount').value = enToKoCount;
+                    document.getElementById('otKoToEnCount').value = koToEnCount;
+                }
+            }
+        }
+
         let poolEnToKo = []; let poolKoToEn = [];
         const totalReq = enToKoCount + koToEnCount;
 
         if (overlapMode === 'no_overlap') {
-            if (totalReq > targetWords.length) return alert(`단어 수(${targetWords.length})가 부족합니다.`);
             const shuffled = [...targetWords].sort(() => 0.5 - Math.random());
             poolEnToKo = shuffled.slice(0, enToKoCount).map(w => ({ type: 'enToKo', wordRef: w }));
             poolKoToEn = shuffled.slice(enToKoCount, totalReq).map(w => ({ type: 'koToEn', wordRef: w }));
         } else {
-            if (enToKoCount > targetWords.length || koToEnCount > targetWords.length) return alert(`단어 수(${targetWords.length})가 부족합니다.`);
             poolEnToKo = [...targetWords].sort(() => 0.5 - Math.random()).slice(0, enToKoCount).map(w => ({ type: 'enToKo', wordRef: w }));
             poolKoToEn = [...targetWords].sort(() => 0.5 - Math.random()).slice(0, koToEnCount).map(w => ({ type: 'koToEn', wordRef: w }));
         }
 
-        testQuestions = [...poolEnToKo, ...poolKoToEn].sort(() => 0.5 - Math.random()); // 전체 섞기
-        if(testQuestions.length === 0) return alert('문제 수를 입력해주세요.');
+        testQuestions = [...poolEnToKo, ...poolKoToEn].sort(() => 0.5 - Math.random()); 
 
         currentTestIdx = 0;
         otStats = { correct: 0, incorrect: 0 };
@@ -793,7 +833,6 @@
         document.getElementById('otQuestionType').innerText = typeText;
         document.getElementById('otQuestionText').innerText = promptText;
         
-        // UI 초기화
         const inputEl = document.getElementById('otAnswerInput');
         inputEl.value = ''; inputEl.disabled = false; inputEl.focus();
         inputEl.style.display = 'block';
@@ -819,14 +858,13 @@
         if(!userAns) return alert('답을 입력해주세요.');
 
         const inputEl = document.getElementById('otAnswerInput');
-        inputEl.disabled = true; // 중복 입력 방지
+        inputEl.disabled = true; 
         document.getElementById('otSubmitBtn').style.display = 'none';
         
         const fbArea = document.getElementById('otFeedbackArea');
         fbArea.style.display = 'block';
 
         if(q.type === 'koToEn') {
-            // 한->영: 자동 채점 (대소문자 무시)
             const isCorrect = userAns.toLowerCase() === q.wordRef.en.toLowerCase();
             if(isCorrect) {
                 fbArea.className = 'test-feedback feedback-correct';
@@ -841,7 +879,6 @@
             otIsWaitingForNext = true;
             document.getElementById('otNextBtn').focus();
         } else {
-            // 영->한: 자가 채점
             inputEl.style.display = 'none';
             fbArea.className = 'test-feedback feedback-selfval';
             fbArea.innerHTML = `<span style="font-size:14px; color:#7f8c8d;">내 답안:</span> <b style="color:#e67e22;">${userAns}</b><br><br><span style="font-size:14px; color:#7f8c8d;">실제 뜻:</span> <b>${q.wordRef.ko}</b>`;
@@ -856,13 +893,10 @@
         nextOtQuestion();
     }
 
-    function nextOtQuestion() {
-        currentTestIdx++;
-        renderOtQuestion();
-    }
+    function nextOtQuestion() { currentTestIdx++; renderOtQuestion(); }
 
     function finishTestUi() {
-        saveDB(); // 변경된 status 저장
+        saveDB(); 
         document.getElementById('otArea').style.display = 'none';
         document.getElementById('otResultArea').style.display = 'block';
         document.getElementById('otResCorrect').innerText = otStats.correct;
@@ -877,51 +911,84 @@
         }
     }
 
-    function finishOnlineTest() {
-        document.getElementById('otResultArea').style.display = 'none';
-        document.getElementById('otSetupArea').style.display = 'block';
-    }
+    function finishOnlineTest() { document.getElementById('otResultArea').style.display = 'none'; document.getElementById('otSetupArea').style.display = 'block'; }
 
     // ----------------- 학습지(PDF) 생성 로직 ----------------- //
-    function generateTest() {
+    function generateTest(useMax = false) {
         const folder = document.getElementById('testFolderSelect').value;
         const customTitle = document.getElementById('testCustomTitle').value.trim();
-        const start = parseInt(document.getElementById('startNum').value);
-        const end = parseInt(document.getElementById('endNum').value);
+        const start = parseInt(document.getElementById('startNum').value) || 0;
+        const end = parseInt(document.getElementById('endNum').value) || 999999;
         const statusFilter = document.getElementById('testStatusFilter').value; 
         const overlapMode = document.getElementById('testOverlapMode').value;
-        const enToKo = parseInt(document.getElementById('enToKoCount').value) || 0;
-        const koToEn = parseInt(document.getElementById('koToEnCount').value) || 0;
+        let enToKoCount = parseInt(document.getElementById('enToKoCount').value) || 0;
+        let koToEnCount = parseInt(document.getElementById('koToEnCount').value) || 0;
 
         document.getElementById('printBtn').style.display = 'none';
 
         if (!folder) return alert('단어장을 선택해주세요.');
-        if (isNaN(start) || isNaN(end)) return alert('출제 범위를 정확히 입력해주세요.');
+
+        if (!useMax && enToKoCount === 0 && koToEnCount === 0) return alert('문제 수를 입력하거나 [모든 단어 출제] 버튼을 눌러주세요.');
 
         let targetWords = db[folder].filter(w => w.id >= start && w.id <= end);
+        
         if (statusFilter === 'know') targetWords = targetWords.filter(w => w.status === 'know');
         else if (statusFilter === 'unk') targetWords = targetWords.filter(w => w.status === 'unk');
         else if (statusFilter === 'none') targetWords = targetWords.filter(w => !w.status || w.status === '');
 
         if (targetWords.length === 0) return alert('조건에 맞는 단어가 없습니다.');
 
-        let enToKoQuestions = []; let koToEnQuestions = []; const totalQuestions = enToKo + koToEn;
+        if (useMax) {
+            if (overlapMode === 'no_overlap') {
+                enToKoCount = Math.ceil(targetWords.length / 2);
+                koToEnCount = Math.floor(targetWords.length / 2);
+            } else {
+                enToKoCount = targetWords.length;
+                koToEnCount = targetWords.length;
+            }
+            alert(`안내: 가능한 모든 단어(${targetWords.length}개)를 활용하여 총 ${enToKoCount + koToEnCount}문제를 출제합니다.`);
+            document.getElementById('enToKoCount').value = enToKoCount;
+            document.getElementById('koToEnCount').value = koToEnCount;
+        } else {
+            let totalReq = enToKoCount + koToEnCount;
+            if (overlapMode === 'no_overlap') {
+                if (totalReq > targetWords.length) {
+                    alert(`안내: 요청하신 문제 수(${totalReq}문제)가 출제 가능한 단어 수(${targetWords.length}개)를 초과했습니다.\n가능한 최대 개수로 자동 조정하여 출제합니다.`);
+                    let ratio = enToKoCount / totalReq;
+                    enToKoCount = Math.round(targetWords.length * ratio);
+                    koToEnCount = targetWords.length - enToKoCount;
+                    document.getElementById('enToKoCount').value = enToKoCount;
+                    document.getElementById('koToEnCount').value = koToEnCount;
+                }
+            } else {
+                let adjusted = false;
+                if (enToKoCount > targetWords.length) { enToKoCount = targetWords.length; adjusted = true; }
+                if (koToEnCount > targetWords.length) { koToEnCount = targetWords.length; adjusted = true; }
+                if (adjusted) {
+                    alert(`안내: 요청하신 문제 수가 출제 가능한 단어 수(${targetWords.length}개)를 초과했습니다.\n가능한 최대 개수로 자동 조정하여 출제합니다.`);
+                    document.getElementById('enToKoCount').value = enToKoCount;
+                    document.getElementById('koToEnCount').value = koToEnCount;
+                }
+            }
+        }
+
+        let enToKoQuestions = []; let koToEnQuestions = [];
+        const finalTotalReq = enToKoCount + koToEnCount;
 
         if (overlapMode === 'no_overlap') {
-            if (totalQuestions > targetWords.length) return alert(`안내: 문제 수 부족. 중복을 허용하세요.`);
             const shuffled = [...targetWords].sort(() => 0.5 - Math.random());
-            enToKoQuestions = shuffled.slice(0, enToKo); koToEnQuestions = shuffled.slice(enToKo, totalQuestions);
+            enToKoQuestions = shuffled.slice(0, enToKoCount);
+            koToEnQuestions = shuffled.slice(enToKoCount, finalTotalReq);
         } else {
-            if (enToKo > targetWords.length || koToEn > targetWords.length) return alert(`안내: 문제 수가 대상 단어 수 초과.`);
-            enToKoQuestions = [...targetWords].sort(() => 0.5 - Math.random()).slice(0, enToKo);
-            koToEnQuestions = [...targetWords].sort(() => 0.5 - Math.random()).slice(0, koToEn);
+            enToKoQuestions = [...targetWords].sort(() => 0.5 - Math.random()).slice(0, enToKoCount);
+            koToEnQuestions = [...targetWords].sort(() => 0.5 - Math.random()).slice(0, koToEnCount);
         }
 
         let finalTitle = customTitle;
         if (!finalTitle) {
             let statusText = "전체 단어";
             if (statusFilter === 'know') statusText = "아는 단어"; else if (statusFilter === 'unk') statusText = "헷갈리는 단어"; else if (statusFilter === 'none') statusText = "미분류 단어";
-            finalTitle = `[${folder}] ${start}번~${end}번 (${statusText}) - 총 ${totalQuestions}문제`;
+            finalTitle = `[${folder}] ${statusText} 출제 - 총 ${finalTotalReq}문제`;
         }
 
         renderWorksheet(enToKoQuestions, koToEnQuestions, finalTitle);

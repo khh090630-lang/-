@@ -518,7 +518,7 @@
         }
     }
 
-    // ----------------- 개별 폴더 모달 창 (내부 검색 연동) ----------------- //
+    // ----------------- 개별 폴더 모달 창 (내부 검색 연동 및 정렬 로직 업데이트) ----------------- //
     function openFolderDetail(folderName) {
         currentFolder = folderName;
         document.getElementById('modalTitle').innerText = folderName;
@@ -549,17 +549,26 @@
         else if (filterVal === 'unk') words = words.filter(w => w.status === 'unk');
         else if (filterVal === 'none') words = words.filter(w => !w.status || w.status === '');
 
-        // 2. 부분 일치 검색 적용
+        // 2. 검색 및 정렬 로직 (starts With 우선순위 반영)
         if (searchVal) {
             words = words.filter(w => w.en.toLowerCase().includes(searchVal) || w.ko.includes(searchVal));
+            
+            words.sort((a, b) => {
+                const aStarts = a.en.toLowerCase().startsWith(searchVal);
+                const bStarts = b.en.toLowerCase().startsWith(searchVal);
+                
+                if (aStarts && !bStarts) return -1; // a가 먼저 오도록
+                if (!aStarts && bStarts) return 1;  // b가 먼저 오도록
+                return a.id - b.id; // 동일 조건이면 번호 순
+            });
+        } else {
+            words.sort((a, b) => a.id - b.id); // 검색어 없을 땐 기본 번호 순
         }
 
         if (words.length === 0) {
             container.innerHTML = '<p style="text-align:center; color:#888;">해당 조건/검색어에 맞는 단어가 없습니다.</p>';
             return;
         }
-
-        words.sort((a, b) => a.id - b.id);
 
         let html = '<table class="word-table">';
         html += '<tr><th width="12%">번호</th><th width="13%">상태</th><th width="30%">영단어</th><th width="30%">뜻</th><th width="15%">관리</th></tr>';
@@ -667,7 +676,7 @@
         }
     }
 
-    // ----------------- 전역(글로벌) 단어 검색 로직 (NEW) ----------------- //
+    // ----------------- 전역(글로벌) 단어 검색 로직 (starts With 우선 정렬 적용) ----------------- //
     function openGlobalSearch() {
         document.getElementById('globalSearchModal').style.display = 'block';
         document.getElementById('globalSearchInput').value = '';
@@ -703,6 +712,18 @@
             container.innerHTML = '<p style="text-align:center; color:#888;">검색 결과가 없습니다.</p>';
             return;
         }
+
+        // 검색 결과 정렬 (startsWith 우선, 그다음 단어장, 그다음 id 순)
+        results.sort((a, b) => {
+            const aStarts = a.en.toLowerCase().startsWith(keyword);
+            const bStarts = b.en.toLowerCase().startsWith(keyword);
+            
+            if (aStarts && !bStarts) return -1;
+            if (!aStarts && bStarts) return 1;
+            
+            if (a.folder !== b.folder) return a.folder.localeCompare(b.folder);
+            return a.id - b.id;
+        });
 
         let html = '<table class="word-table">';
         html += '<tr><th width="15%">단어장 이름</th><th width="10%">번호</th><th width="13%">상태</th><th width="23%">영단어</th><th width="24%">뜻</th><th width="15%">관리</th></tr>';

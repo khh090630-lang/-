@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>나만의 단어장 & 학습지 생성기</title>
-    <!-- PDF 다운로드를 위한 html2pdf 라이브러리 추가 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body { font-family: 'Pretendard', sans-serif; background: #f4f7f6; padding: 20px; overflow-x: hidden; }
@@ -102,7 +101,6 @@
         .feedback-incorrect { background: #fadbd8; color: #c0392b; border: 1px solid #e74c3c; }
         .feedback-selfval { background: #fef9e7; color: #d35400; border: 1px solid #f39c12; }
 
-        /* AI 예문 애니메이션용 */
         @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
         .ai-loading { animation: pulse 1.5s infinite; color: #8e44ad; font-size: 18px; font-weight: bold; }
 
@@ -132,6 +130,8 @@
             .word-table th, .word-table td { padding: 8px 5px; }
             .fc-container { height: 280px; }
             .fc-face { font-size: 24px; padding: 15px; }
+            .fc-controls { flex-direction: row; gap: 10px; }
+            .fc-btn { padding: 12px; font-size: 14px; }
             .test-question-text { font-size: 24px; }
         }
     </style>
@@ -169,7 +169,7 @@
         <button class="action-btn" onclick="saveWords()">단어 등록하기</button>
     </div>
 
-    <!-- ★ NEW: 설정 섹션 (API Key 등록) ★ -->
+    <!-- ★ 환경 설정 섹션 (API Key 등록) ★ -->
     <div id="settingsTab" class="section">
         <h3>환경 설정 ⚙️</h3>
         <div style="background: #f9f9f9; padding: 25px; border-radius: 8px; border: 1px solid #eee;">
@@ -177,7 +177,7 @@
             <p style="color:#555; font-size:14px; margin-bottom:15px; line-height:1.5;">
                 '말해보카'처럼 테스트 시 단어의 빈칸 예문을 생성하려면 구글의 <strong>Gemini API Key</strong>가 필요합니다. 무료로 발급받아 입력해 두면 자동으로 예문이 생성됩니다!
             </p>
-            <input type="password" id="geminiApiKeyInput" placeholder="AI Studio에서 발급받은 API 키 입력 (AIzaSy...)">
+            <input type="password" id="geminiApiKeyInput" placeholder="AI Studio에서 발급받은 API 키 입력 (AQ...)">
             <button class="action-btn" style="margin-top: 10px; background:#8e44ad;" onclick="saveApiKey()">API 키 저장하기</button>
             <div style="margin-top: 15px; font-size: 14px; font-weight:bold;">
                 👉 <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:#3498db; text-decoration: underline;">Gemini API Key 무료 발급받기 (클릭)</a>
@@ -283,7 +283,6 @@
             
             <div class="test-card">
                 <div id="otQuestionType" class="test-question-type"></div>
-                <!-- 질문 텍스트 (AI 예문이 들어갈 공간) -->
                 <div id="otQuestionText" class="test-question-text"></div>
                 
                 <input type="text" id="otAnswerInput" class="test-input" placeholder="정답을 입력하세요" autocomplete="off" onkeypress="handleOtKeyPress(event)">
@@ -473,7 +472,7 @@
     let db = {};
     let currentFolder = ''; 
 
-    // ★ TTS (음성 읽어주기) 유틸리티 함수 ★
+    // ★ TTS (음성 읽어주기) 함수 ★
     function speakWord(text) {
         if (!window.speechSynthesis) return; 
         window.speechSynthesis.cancel(); 
@@ -483,7 +482,7 @@
         window.speechSynthesis.speak(utterance);
     }
 
-    // ★ NEW: Gemini API로 예문 생성 함수 ★
+    // ★ 업그레이드된 AI 예문 생성 함수 (에러 로깅 및 찌꺼기 제거 완벽 대응) ★
     async function fetchAiSentence(en, ko, apiKey) {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
         const promptText = `주어진 영단어와 뜻을 활용하여 영어 예문과 한국어 해석을 작성해주세요.
@@ -493,7 +492,7 @@
 조건:
 1. 영어 예문(en)에서 주어진 영단어(형태 변화 포함)가 들어갈 자리는 반드시 "_____" (밑줄 5개)로 비워두세요. 절대 원래 영단어를 노출하지 마세요.
 2. 한국어 해석(ko)은 아주 자연스럽게 작성하세요.
-3. 반드시 아래 JSON 형식으로만 응답하세요. Markdown 기호나 코드블록 없이 순수 JSON 문자열만 출력하세요.
+3. 반드시 아래 JSON 형식으로만 응답하세요. 다른 부가 설명이나 기호는 일절 포함하지 마세요.
 {"en": "영어 예문 빈칸 포함", "ko": "한국어 해석"}`;
 
         try {
@@ -506,11 +505,22 @@
                 })
             });
             const data = await res.json();
-            if(data.error) return null;
-            const text = data.candidates[0].content.parts[0].text;
+            
+            // API 자체에서 거부(에러)한 경우 (키 오류 등)
+            if(data.error) {
+                console.error("API 응답 에러:", data.error.message);
+                alert("AI 연결 실패! API 키를 다시 확인해주세요.\n(사유: " + data.error.message + ")");
+                return null;
+            }
+            
+            let text = data.candidates[0].content.parts[0].text;
+            
+            // ★ AI가 제멋대로 추가하는 마크다운(```json) 찌꺼기 강제 제거 필터 ★
+            text = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+            
             return JSON.parse(text);
         } catch(e) {
-            console.error("AI 예문 생성 실패:", e);
+            console.error("AI 예문 파싱 에러:", e);
             return null;
         }
     }
@@ -530,7 +540,6 @@
         const localData = localStorage.getItem('vocabDB');
         if (localData) { db = JSON.parse(localData); initUI(); }
         
-        // API 키 불러오기
         const savedKey = localStorage.getItem('geminiApiKey');
         if(savedKey) document.getElementById('geminiApiKeyInput').value = savedKey;
 
@@ -630,6 +639,7 @@
         if (!text.trim()) return alert('단어를 입력해주세요.');
 
         const lines = text.split('\n'); let count = 0;
+        
         for(let i=0; i<lines.length; i++) {
             let line = lines[i];
             if (!line.trim()) continue;
@@ -800,6 +810,7 @@
         if(index > -1) { db[folderName][index].en = newEn; db[folderName][index].ko = newKo; saveDB(); executeGlobalSearch(); }
     }
 
+
     // ----------------- 스마트 복습 (SRS) 코어 알고리즘 ----------------- //
     function updateSRS(wordRef, isCorrect) {
         const now = Date.now();
@@ -809,16 +820,16 @@
             newSrs = (wordRef.srsLevel || 0) + 1;
             newStatus = 'know';
             let delay = 0;
-            if (newSrs === 1) delay = 1 * 24 * 60 * 60 * 1000;      // 1일
-            else if (newSrs === 2) delay = 3 * 24 * 60 * 60 * 1000; // 3일
-            else if (newSrs === 3) delay = 7 * 24 * 60 * 60 * 1000; // 7일
-            else if (newSrs === 4) delay = 14 * 24 * 60 * 60 * 1000;// 14일
-            else { newSrs = 5; delay = 30 * 24 * 60 * 60 * 1000; }  // 최대 30일
+            if (newSrs === 1) delay = 1 * 24 * 60 * 60 * 1000;      
+            else if (newSrs === 2) delay = 3 * 24 * 60 * 60 * 1000; 
+            else if (newSrs === 3) delay = 7 * 24 * 60 * 60 * 1000; 
+            else if (newSrs === 4) delay = 14 * 24 * 60 * 60 * 1000;
+            else { newSrs = 5; delay = 30 * 24 * 60 * 60 * 1000; }  
             newNext = now + delay;
         } else {
             newSrs = 0;
             newStatus = 'unk';
-            newNext = now + 5 * 60 * 1000; // 5분 뒤
+            newNext = now + 5 * 60 * 1000; 
         }
 
         for(let f in db) {
@@ -863,7 +874,7 @@
     function toggleFlip() { 
         if(!fcDidDrag) {
             fcCard.classList.toggle('flipped'); 
-            if(window.speechSynthesis) window.speechSynthesis.cancel(); // 뒤집으면 읽기 취소
+            if(window.speechSynthesis) window.speechSynthesis.cancel(); 
         }
     }
     function recordSwipe(dir) {
@@ -894,7 +905,7 @@
     function retryUnknown() { fcList = document.getElementById('fcOrderSelect').value === 'sequential' ? [...fcUnknown].sort((a,b)=>a.id-b.id) : [...fcUnknown].sort(()=>0.5-Math.random()); fcIndex = 0; fcKnown = []; fcUnknown = []; document.getElementById('fcResult').style.display = 'none'; document.getElementById('fcArea').style.display = 'flex'; renderFlashcard(); }
     function quitFlashcards() { if(window.speechSynthesis) window.speechSynthesis.cancel(); document.getElementById('fcArea').style.display = 'none'; document.getElementById('fcSetupArea').style.display = 'block'; saveDB(); }
 
-    // ----------------- ★ NEW: 온라인 테스트 로직 (AI 예문 연동) ★ ----------------- //
+    // ----------------- 온라인 테스트 로직 ----------------- //
     let testQuestions = [];
     let currentTestIdx = 0;
     let otStats = { correct: 0, incorrect: 0 };
@@ -974,7 +985,6 @@
         const inputEl = document.getElementById('otAnswerInput');
         const submitBtn = document.getElementById('otSubmitBtn');
 
-        // UI 기본 초기화
         inputEl.value = ''; inputEl.disabled = true; inputEl.style.display = 'none';
         submitBtn.style.display = 'none';
         document.getElementById('otFeedbackArea').style.display = 'none';
@@ -993,10 +1003,10 @@
                     qtEl.innerHTML = `<div style="font-size:26px; color:#2c3e50; margin-bottom:10px; line-height:1.4;">${aiData.en}</div>
                                       <div style="font-size:16px; color:#7f8c8d; font-weight:normal;">(${aiData.ko})</div>`;
                 } else {
-                    qtEl.innerText = q.wordRef.ko; // API 오류 시 기본 뜻만 표시
+                    qtEl.innerText = q.wordRef.ko; 
                 }
             } else {
-                qtEl.innerText = q.wordRef.ko; // 키가 없을 때 기본 뜻만 표시
+                qtEl.innerText = q.wordRef.ko; 
             }
         } else {
             document.getElementById('otQuestionType').innerText = "영단어를 보고 뜻을 적으세요";
@@ -1004,7 +1014,6 @@
             speakWord(q.wordRef.en); // 영->한 일 때는 단어 소리내어 읽기
         }
 
-        // 로딩 끝나면 입력창 활성화
         inputEl.disabled = false; inputEl.style.display = 'block'; inputEl.focus();
         submitBtn.style.display = 'block';
     }
@@ -1058,7 +1067,7 @@
     function finishOnlineTest() { document.getElementById('otResultArea').style.display = 'none'; document.getElementById('otSetupArea').style.display = 'block'; }
 
 
-    // ----------------- ★ NEW: 오늘의 학습 로직 (AI 예문 연동) ★ ----------------- //
+    // ----------------- 오늘의 학습 로직 (AI 예문 연동) ----------------- //
     let tdQuestions = [];
     let currentTdIdx = 0;
     let tdStats = { correct: 0, incorrect: 0 };
@@ -1207,6 +1216,7 @@
         if (!useMax && enToKoCount === 0 && koToEnCount === 0) return alert('문제 수를 입력하거나 [모든 단어 출제] 버튼을 눌러주세요.');
 
         let targetWords = db[folder].filter(w => w.id >= start && w.id <= end);
+        
         if (statusFilter === 'know') targetWords = targetWords.filter(w => w.status === 'know');
         else if (statusFilter === 'unk') targetWords = targetWords.filter(w => w.status === 'unk');
         else if (statusFilter === 'none') targetWords = targetWords.filter(w => !w.status || w.status === '');

@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -514,12 +513,12 @@
         return false;
     }
 
-    // ★ 완벽하게 수정된 AI 예문 일괄 생성 함수 ★
+    // ★ 개선된 AI 예문 일괄 생성 함수 (오류 시 팝업 띄움 + 3.5 모델 고정 + 오류 로깅) ★
     async function prepareAiDataBatch(questions, apiKey, progressCallback) {
         const koToEnQs = questions.filter(q => q.type === 'koToEn');
         if(koToEnQs.length === 0) return;
 
-        const chunkSize = 10; // 안정성을 위해 한 번에 10개씩 요청
+        const chunkSize = 10; 
         let completed = 0;
 
         for(let i = 0; i < koToEnQs.length; i += chunkSize) {
@@ -532,8 +531,8 @@
             
             progressCallback(completed, koToEnQs.length);
 
-            // API 모델 주소를 확실하고 안정적인 gemini-1.5-flash-latest 로 고정
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+            // API 모델 주소를 최신 gemini-3.5-flash 로 고정
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
             const promptText = `Create English sentences with a blank for the given words.
 Rules:
 1. Replace the target 'word' in the English sentence with "_____" (5 underscores). Do NOT reveal the target word.
@@ -560,10 +559,6 @@ ${JSON.stringify(wordList)}`;
                     
                     // ★ 에러 발생 시 명확히 안내창(alert)을 띄우고 기본 테스트로 진행 ★
                     alert(`🚨 AI 예문 생성 실패!\n\n사유: ${errMsg}\n\n확인을 누르면 일반 테스트 모드(기본 뜻 표시)로 진행합니다.`);
-                    
-                    document.getElementById('aiLoadingTitle').innerHTML = "⚠️ AI 연결 실패";
-                    document.getElementById('aiLoadingText').innerHTML = `<span style="font-size:16px; color:#e74c3c;">${errMsg}</span>`;
-                    await new Promise(r => setTimeout(r, 2000)); // 에러 내용을 유저가 2초간 읽을 수 있도록 대기
                     break; 
                 }
 
@@ -571,9 +566,6 @@ ${JSON.stringify(wordList)}`;
                 if(data.error) {
                     const errMsg = data.error.message || "알 수 없는 에러";
                     alert(`🚨 AI 생성 거부!\n\n사유: ${errMsg}`);
-                    document.getElementById('aiLoadingTitle').innerHTML = "⚠️ AI 생성 거부";
-                    document.getElementById('aiLoadingText').innerHTML = `<span style="font-size:16px; color:#e74c3c;">${errMsg}</span>`;
-                    await new Promise(r => setTimeout(r, 2000));
                     break;
                 }
                 
@@ -595,9 +587,6 @@ ${JSON.stringify(wordList)}`;
             } catch(e) {
                 console.error("AI 배치 파싱 에러:", e);
                 alert(`🚨 AI 응답 처리 오류!\n\n사유: ${e.message}\n\nAI가 잘못된 형식의 데이터를 반환했습니다. 일반 테스트 모드로 진행합니다.`);
-                document.getElementById('aiLoadingTitle').innerHTML = "⚠️ AI 응답 오류";
-                document.getElementById('aiLoadingText').innerHTML = `<span style="font-size:16px; color:#e74c3c;">${e.message}</span>`;
-                await new Promise(r => setTimeout(r, 2000));
                 break;
             }
             completed += chunk.length;
@@ -692,7 +681,7 @@ ${JSON.stringify(wordList)}`;
     function createFolder() {
         const name = prompt("새로운 단어장 이름을 입력하세요:");
         if (name && !db[name]) { db[name] = []; saveDB(); initUI(); } 
-        else if (db[name]) { alert("이미 존재하는 단어장닙니다."); }
+        else if (db[name]) { alert("이미 존재하는 단어장입니다."); }
     }
 
     function renderFolders() {

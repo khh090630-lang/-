@@ -10,11 +10,13 @@
         body { font-family: 'Pretendard', sans-serif; background: #f4f7f6; padding: 20px; overflow-x: hidden; }
         .container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         
+        /* 메인 타이틀 및 상단 헤더 영역 */
         .main-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
         h1 { color: #2c3e50; margin: 0; font-size: 26px; display: flex; align-items: center; gap: 10px; }
         .global-search-btn { background: #3498db; color: white; border: none; padding: 10px 18px; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 15px; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: background 0.2s; }
         .global-search-btn:hover { background: #2980b9; }
 
+        /* 탭 메뉴 */
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
         .tab-btn { flex: 1; padding: 10px; border: none; background: #e0e6ed; cursor: pointer; border-radius: 6px; font-weight: bold; min-width: 80px; white-space: nowrap; font-size: 13px;}
         .tab-btn.active { background: #3498db; color: white; }
@@ -25,6 +27,7 @@
         .section { display: none; }
         .section.active { display: block; }
         
+        /* 폴더 UI */
         .folder-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
         .folder { background: #f1c40f; padding: 20px; border-radius: 8px 8px 8px 8px; text-align: center; cursor: pointer; position: relative; font-weight: bold; color: #333; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.2s; }
         .folder:hover { transform: translateY(-5px); }
@@ -35,6 +38,7 @@
         button.action-btn:hover { background: #27ae60; }
         button.action-btn:disabled { background: #bdc3c7; cursor: not-allowed; }
         
+        /* 학습지 출력 UI */
         .worksheet-output { margin-top: 20px; border-top: 2px dashed #ccc; padding-top: 20px; }
         .worksheet-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; table-layout: fixed; }
         .worksheet-table td { border: 1px solid #ccc; padding: 12px 10px; font-size: 15px; vertical-align: middle; word-wrap: break-word; }
@@ -46,6 +50,7 @@
         .answer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-bottom: 20px; }
         .answer-item { font-size: 14px; background: #f9f9f9; padding: 8px; border-radius: 4px; border: 1px solid #eee; page-break-inside: avoid; }
 
+        /* 모달(단어 목록 & 전체 검색) UI 개편 */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
         .modal-content { background-color: #fff; margin: 3% auto; border-radius: 12px; width: 90%; max-width: 800px; height: 85vh; position: relative; padding: 0; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
         .modal-scroll-area { height: 100%; overflow-y: auto; padding: 20px 30px; box-sizing: border-box; }
@@ -67,6 +72,7 @@
         .bg-add { background: #fef9e7; border: 1px solid #f9e79f; }
         .bg-del { background: #fdedec; border: 1px solid #fadbd8; }
 
+        /* 플래시카드 & 온라인 테스트 스타일 */
         .fc-area, .test-area { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 0; overflow: hidden; }
         .fc-container { width: 100%; max-width: 350px; height: 300px; margin: 20px auto; perspective: 1000px; position: relative; user-select: none; }
         #fcSwipeWrapper { width: 100%; height: 100%; position: absolute; transform-origin: center bottom; cursor: grab; }
@@ -521,7 +527,8 @@
             
             progressCallback(completed, koToEnQs.length);
 
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            // ★ gemini-3.5-flash 모델로 완벽 적용 ★
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
             const promptText = `Create English sentences with a blank for the given words.
 Rules:
 1. Replace the target 'word' in the English sentence with "_____" (5 underscores).
@@ -880,7 +887,8 @@ ${JSON.stringify(wordList)}`;
             });
         }
         
-        saveDB(); // ★ 즉시 DB 반영하여 중간에 꺼져도 망각곡선 안전하게 유지 ★
+        // ★ 즉시 로컬에만 우선 저장하여 앱이 꺼져도 망각곡선 데이터 유실 방지 ★
+        localStorage.setItem('vocabDB', JSON.stringify(db));
     }
 
     // ----------------- 플래시카드 로직 (TTS 적용) ----------------- //
@@ -911,7 +919,7 @@ ${JSON.stringify(wordList)}`;
         document.getElementById('fcFront').innerText = cw.en; document.getElementById('fcBack').innerText = cw.ko;
         fcSwipeWrapper.style.transition = 'none'; fcSwipeWrapper.style.transform = `translateX(0px) rotateZ(0deg) scale(1)`; fcCard.style.transition = '';
         
-        speakWord(cw.en);
+        speakWord(cw.en); // 카드 뜰 때 영단어 읽기
     }
     function toggleFlip() { 
         if(!fcDidDrag) {
@@ -1117,7 +1125,7 @@ ${JSON.stringify(wordList)}`;
     function finishOnlineTest() { document.getElementById('otResultArea').style.display = 'none'; document.getElementById('otSetupArea').style.display = 'block'; }
 
 
-    // ----------------- 오늘의 학습 로직 ----------------- //
+    // ----------------- 오늘의 학습 로직 (AI 배치 처리 및 유의어) ----------------- //
     let tdQuestions = [];
     let currentTdIdx = 0;
     let tdStats = { correct: 0, incorrect: 0 };
@@ -1127,7 +1135,6 @@ ${JSON.stringify(wordList)}`;
         let dueEnSet = new Set(); let dueCount = 0; const now = Date.now();
         for(let f in db) {
             db[f].forEach(w => {
-                // 한 번이라도 테스트를 봤고, 다음 복습 시간이 현재보다 과거인 경우만 출제
                 if(w.nextReview && w.nextReview > 0 && w.nextReview <= now) {
                     let lowerEn = w.en.toLowerCase();
                     if(!dueEnSet.has(lowerEn)) { dueEnSet.add(lowerEn); dueCount++; }
@@ -1159,7 +1166,7 @@ ${JSON.stringify(wordList)}`;
             return { type: Math.random() > 0.5 ? 'koToEn' : 'enToKo', wordRef: w };
         }).sort(() => 0.5 - Math.random());
 
-        // AI 예문 일괄 생성
+        // ★ 일괄 AI 예문 생성 (배치 처리) ★
         const apiKey = localStorage.getItem('geminiApiKey');
         if (apiKey && tdQuestions.some(q => q.type === 'koToEn')) {
             document.getElementById('aiLoadingOverlay').style.display = 'flex';

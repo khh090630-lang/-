@@ -4,16 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>나만의 단어장 & 학습지 생성기</title>
+    <!-- PDF 다운로드를 위한 html2pdf 라이브러리 추가 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body { font-family: 'Pretendard', sans-serif; background: #f4f7f6; padding: 20px; overflow-x: hidden; }
         .container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         
+        /* 메인 타이틀 및 상단 헤더 영역 */
         .main-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
         h1 { color: #2c3e50; margin: 0; font-size: 26px; display: flex; align-items: center; gap: 10px; }
         .global-search-btn { background: #3498db; color: white; border: none; padding: 10px 18px; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 15px; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: background 0.2s; }
         .global-search-btn:hover { background: #2980b9; }
 
+        /* 탭 메뉴 */
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
         .tab-btn { flex: 1; padding: 10px; border: none; background: #e0e6ed; cursor: pointer; border-radius: 6px; font-weight: bold; min-width: 80px; white-space: nowrap; font-size: 13px;}
         .tab-btn.active { background: #3498db; color: white; }
@@ -24,6 +27,7 @@
         .section { display: none; }
         .section.active { display: block; }
         
+        /* 폴더 UI */
         .folder-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
         .folder { background: #f1c40f; padding: 20px; border-radius: 8px 8px 8px 8px; text-align: center; cursor: pointer; position: relative; font-weight: bold; color: #333; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.2s; }
         .folder:hover { transform: translateY(-5px); }
@@ -34,6 +38,7 @@
         button.action-btn:hover { background: #27ae60; }
         button.action-btn:disabled { background: #bdc3c7; cursor: not-allowed; }
         
+        /* 학습지 출력 UI */
         .worksheet-output { margin-top: 20px; border-top: 2px dashed #ccc; padding-top: 20px; }
         .worksheet-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; table-layout: fixed; }
         .worksheet-table td { border: 1px solid #ccc; padding: 12px 10px; font-size: 15px; vertical-align: middle; word-wrap: break-word; }
@@ -45,6 +50,7 @@
         .answer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-bottom: 20px; }
         .answer-item { font-size: 14px; background: #f9f9f9; padding: 8px; border-radius: 4px; border: 1px solid #eee; page-break-inside: avoid; }
 
+        /* 모달(단어 목록 & 전체 검색) UI 개편 */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
         .modal-content { background-color: #fff; margin: 3% auto; border-radius: 12px; width: 90%; max-width: 800px; height: 85vh; position: relative; padding: 0; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
         .modal-scroll-area { height: 100%; overflow-y: auto; padding: 20px 30px; box-sizing: border-box; }
@@ -66,6 +72,7 @@
         .bg-add { background: #fef9e7; border: 1px solid #f9e79f; }
         .bg-del { background: #fdedec; border: 1px solid #fadbd8; }
 
+        /* 플래시카드 & 온라인 테스트 스타일 */
         .fc-area, .test-area { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 0; overflow: hidden; }
         .fc-container { width: 100%; max-width: 350px; height: 300px; margin: 20px auto; perspective: 1000px; position: relative; user-select: none; }
         #fcSwipeWrapper { width: 100%; height: 100%; position: absolute; transform-origin: center bottom; cursor: grab; }
@@ -468,7 +475,7 @@
 
 <script>
     // ----------------- 환경 설정 ----------------- //
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxl1brYxZ5WywT5WugRPYqHYiybLrsZvUkI5KWFpuON0RKDtxQ8_luYaWaQ2Uvb9div/exec'; 
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKNe_iUIK3_arpOFfd5v5ewY_-OzBp5RYJ5Lm_xqaa2bOwWPsUPyy6vVsWYeTOkYM1/exec'; 
     let db = {};
     let currentFolder = ''; 
 
@@ -482,9 +489,10 @@
         window.speechSynthesis.speak(utterance);
     }
 
-    // ★ 업그레이드된 AI 예문 생성 함수 (에러 로깅 및 찌꺼기 제거 완벽 대응) ★
+    // ★ 업그레이드된 AI 예문 생성 함수 (최신 모델 반영 & 찌꺼기 제거 완벽 대응) ★
     async function fetchAiSentence(en, ko, apiKey) {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        // 구글 최신 모델인 gemini-3.5-flash로 주소 업데이트
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
         const promptText = `주어진 영단어와 뜻을 활용하여 영어 예문과 한국어 해석을 작성해주세요.
 영단어: "${en}"
 뜻: "${ko}"
@@ -809,7 +817,6 @@
         if(!newEn.trim() || !newKo.trim()) return; const index = db[folderName].findIndex(w => w.id === id);
         if(index > -1) { db[folderName][index].en = newEn; db[folderName][index].ko = newKo; saveDB(); executeGlobalSearch(); }
     }
-
 
     // ----------------- 스마트 복습 (SRS) 코어 알고리즘 ----------------- //
     function updateSRS(wordRef, isCorrect) {
@@ -1216,7 +1223,6 @@
         if (!useMax && enToKoCount === 0 && koToEnCount === 0) return alert('문제 수를 입력하거나 [모든 단어 출제] 버튼을 눌러주세요.');
 
         let targetWords = db[folder].filter(w => w.id >= start && w.id <= end);
-        
         if (statusFilter === 'know') targetWords = targetWords.filter(w => w.status === 'know');
         else if (statusFilter === 'unk') targetWords = targetWords.filter(w => w.status === 'unk');
         else if (statusFilter === 'none') targetWords = targetWords.filter(w => !w.status || w.status === '');

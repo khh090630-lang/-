@@ -140,7 +140,7 @@
 <body>
 
 <!-- 전체 로딩 오버레이 (AI 일괄 생성용) -->
-<div id="aiLoadingOverlay" class="modal" style="display:none; align-items:center; justify-content:center; background-color: rgba(0,0,0,0.8);">
+<div id="aiLoadingOverlay" class="modal" style="display:none; align-items:center; justify-content:center; background-color: rgba(0,0,0,0.8); z-index: 9999;">
     <div style="background:white; padding:40px; border-radius:12px; text-align:center; width: 80%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
         <div class="ai-loading">🤖 AI 예문 일괄 생성 중...</div>
         <p id="aiLoadingText" style="margin-top:15px; font-size: 28px; font-weight:bold; color:#2c3e50;">0 / 0</p>
@@ -478,7 +478,7 @@
 
 <script>
     // ----------------- 환경 설정 ----------------- //
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxl1brYxZ5WywT5WugRPYqHYiybLrsZvUkI5KWFpuON0RKDtxQ8_luYaWaQ2Uvb9div/exec'; 
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKNe_iUIK3_arpOFfd5v5ewY_-OzBp5RYJ5Lm_xqaa2bOwWPsUPyy6vVsWYeTOkYM1/exec'; 
     let db = {};
     let currentFolder = ''; 
 
@@ -494,14 +494,11 @@
 
     // ★ NEW: 유의어 판별 함수 ★
     function checkSynonym(userAnsLower, targetKo) {
-        // 타겟 한글 뜻을 공백 제거 및 쉼표(/) 기준으로 배열화
         const tKoArr = targetKo.split(/[,/]/).map(k => k.trim().replace(/\s+/g, ''));
-        
         for (let f in db) {
             for (let w of db[f]) {
                 if (w.en.toLowerCase() === userAnsLower) {
                     const wKoArr = w.ko.split(/[,/]/).map(k => k.trim().replace(/\s+/g, ''));
-                    // 입력한 단어의 뜻 중에 타겟 단어의 뜻과 겹치거나 포함되는 것이 있는지 확인
                     const isMatch = tKoArr.some(tk => wKoArr.some(wk => tk.includes(wk) || wk.includes(tk)));
                     if (isMatch) return true;
                 }
@@ -510,32 +507,29 @@
         return false;
     }
 
-    // ★ NEW: AI 예문 일괄 생성 함수 (Batch Processing) ★
+    // ★ 개선된 AI 예문 일괄 생성 함수 (오류 시 팝업 띄움 + 안전성 강화) ★
     async function prepareAiDataBatch(questions, apiKey, progressCallback) {
         const koToEnQs = questions.filter(q => q.type === 'koToEn');
         if(koToEnQs.length === 0) return;
 
-        const chunkSize = 15; // API 부하 방지를 위해 한 번에 15개씩 요청
+        const chunkSize = 10; // 안정성을 위해 한 번에 10개씩 요청
         let completed = 0;
 
         for(let i = 0; i < koToEnQs.length; i += chunkSize) {
             const chunk = koToEnQs.slice(i, i + chunkSize);
-            const wordList = chunk.map((q, idx) => ({ id: idx, en: q.wordRef.en, ko: q.wordRef.ko }));
+            const wordList = chunk.map((q, idx) => ({ id: idx, word: q.wordRef.en, meaning: q.wordRef.ko }));
             
             progressCallback(completed, koToEnQs.length);
 
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-            const promptText = `주어진 영단어와 뜻 목록을 바탕으로 각각의 영어 예문과 한국어 해석을 작성해주세요.
-조건:
-1. 영어 예문(en)에서 주어진 영단어가 들어갈 자리는 반드시 "_____" (밑줄 5개)로 비워두세요. 원래 영단어를 노출하지 마세요.
-2. 한국어 해석(ko)은 아주 자연스럽게 작성하세요.
-3. 반드시 아래 JSON 배열 형식으로만 응답하세요. 마크다운(\`\`\`json 등)이나 다른 설명은 절대 추가하지 마세요.
-[
-  {"id": 0, "en": "예문", "ko": "해석"},
-  {"id": 1, "en": "예문", "ko": "해석"}
-]
+            const promptText = `Create English sentences with a blank for the given words.
+Rules:
+1. Replace the target 'word' in the English sentence with "_____" (5 underscores).
+2. Provide a natural Korean translation for the sentence.
+3. Output ONLY a valid JSON array matching the exact structure below, with no markdown formatting or extra text.
+[{"id": 0, "en": "I like _____.", "ko": "나는 사과를 좋아한다."}]
 
-단어 목록:
+Data:
 ${JSON.stringify(wordList)}`;
 
             try {
@@ -550,7 +544,7 @@ ${JSON.stringify(wordList)}`;
                 const data = await res.json();
                 
                 if(data.error) {
-                    console.error("API 응답 에러:", data.error.message);
+                    alert(`AI 예문 생성 실패: ${data.error.message}\n\n(AI 없이 기본 뜻 표시로 진행됩니다)`);
                     break; 
                 }
                 
@@ -558,15 +552,13 @@ ${JSON.stringify(wordList)}`;
                 text = text.replace(/```json/gi, '').replace(/```/g, '').trim();
                 const parsed = JSON.parse(text);
                 
-                // 생성된 데이터를 원본 질문(chunk)에 매핑
                 parsed.forEach(p => {
-                    if (chunk[p.id]) {
-                        chunk[p.id].aiData = { en: p.en, ko: p.ko };
-                    }
+                    const match = chunk.find((_, idx) => idx === p.id);
+                    if (match) match.aiData = { en: p.en, ko: p.ko };
                 });
             } catch(e) {
                 console.error("AI 배치 파싱 에러:", e);
-                // 에러 발생 시 건너뛰고 다음 청크 진행 (실패한 문제는 기본 뜻 텍스트만 표시됨)
+                if (i === 0) alert("AI 응답을 처리하는 중 오류가 발생하여 기본 뜻 테스트로 전환됩니다.");
             }
             completed += chunk.length;
             progressCallback(completed, koToEnQs.length);
@@ -858,6 +850,7 @@ ${JSON.stringify(wordList)}`;
         if(index > -1) { db[folderName][index].en = newEn; db[folderName][index].ko = newKo; saveDB(); executeGlobalSearch(); }
     }
 
+
     // ----------------- 스마트 복습 (SRS) 코어 알고리즘 ----------------- //
     function updateSRS(wordRef, isCorrect) {
         const now = Date.now();
@@ -886,6 +879,8 @@ ${JSON.stringify(wordList)}`;
                 }
             });
         }
+        
+        saveDB(); // ★ 즉시 DB 반영하여 중간에 꺼져도 망각곡선 안전하게 유지 ★
     }
 
     // ----------------- 플래시카드 로직 (TTS 적용) ----------------- //
@@ -916,7 +911,7 @@ ${JSON.stringify(wordList)}`;
         document.getElementById('fcFront').innerText = cw.en; document.getElementById('fcBack').innerText = cw.ko;
         fcSwipeWrapper.style.transition = 'none'; fcSwipeWrapper.style.transform = `translateX(0px) rotateZ(0deg) scale(1)`; fcCard.style.transition = '';
         
-        speakWord(cw.en); // 카드 뜰 때 영단어 읽기
+        speakWord(cw.en);
     }
     function toggleFlip() { 
         if(!fcDidDrag) {
@@ -952,7 +947,7 @@ ${JSON.stringify(wordList)}`;
     function retryUnknown() { fcList = document.getElementById('fcOrderSelect').value === 'sequential' ? [...fcUnknown].sort((a,b)=>a.id-b.id) : [...fcUnknown].sort(()=>0.5-Math.random()); fcIndex = 0; fcKnown = []; fcUnknown = []; document.getElementById('fcResult').style.display = 'none'; document.getElementById('fcArea').style.display = 'flex'; renderFlashcard(); }
     function quitFlashcards() { if(window.speechSynthesis) window.speechSynthesis.cancel(); document.getElementById('fcArea').style.display = 'none'; document.getElementById('fcSetupArea').style.display = 'block'; saveDB(); }
 
-    // ----------------- 온라인 테스트 로직 (AI 배치 처리 및 유의어) ----------------- //
+    // ----------------- 온라인 테스트 로직 ----------------- //
     let testQuestions = [];
     let currentTestIdx = 0;
     let otStats = { correct: 0, incorrect: 0 };
@@ -1011,7 +1006,7 @@ ${JSON.stringify(wordList)}`;
 
         testQuestions = [...poolEnToKo, ...poolKoToEn].sort(() => 0.5 - Math.random()); 
 
-        // ★ 일괄 AI 예문 생성 (배치 처리) ★
+        // AI 예문 일괄 생성
         const apiKey = localStorage.getItem('geminiApiKey');
         if (apiKey && testQuestions.some(q => q.type === 'koToEn')) {
             document.getElementById('aiLoadingOverlay').style.display = 'flex';
@@ -1080,7 +1075,6 @@ ${JSON.stringify(wordList)}`;
             const targetEn = q.wordRef.en.toLowerCase();
             
             if(userAnsLower === targetEn) {
-                // 완전 정답
                 inputEl.disabled = true; document.getElementById('otSubmitBtn').style.display = 'none'; fbArea.style.display = 'block';
                 fbArea.className = 'test-feedback feedback-correct';
                 fbArea.innerHTML = '✅ 정답입니다!';
@@ -1088,16 +1082,15 @@ ${JSON.stringify(wordList)}`;
                 speakWord(q.wordRef.en); 
                 document.getElementById('otNextBtn').style.display = 'block'; otIsWaitingForNext = true; document.getElementById('otNextBtn').focus();
             } else {
-                // 오답 처리 전 유의어(Synonym) 판별 로직
+                // ★ 유의어 힌트 로직 ★
                 if (checkSynonym(userAnsLower, q.wordRef.ko)) {
                     fbArea.style.display = 'block';
                     fbArea.className = 'test-feedback feedback-selfval';
                     fbArea.innerHTML = `⚠️ <b>유의어입니다!</b> 문맥상 의도된 다른 단어를 입력해주세요.<br><span style="font-size:14px; color:#555;">(첫 글자 힌트: <b>${targetEn.charAt(0)}...</b>)</span>`;
                     inputEl.value = ''; inputEl.focus();
-                    return; // 오답 처리하지 않고 함수 종료 (재입력 유도)
+                    return; 
                 }
 
-                // 완전 오답
                 inputEl.disabled = true; document.getElementById('otSubmitBtn').style.display = 'none'; fbArea.style.display = 'block';
                 fbArea.className = 'test-feedback feedback-incorrect';
                 fbArea.innerHTML = `❌ 틀렸습니다!<br><span style="font-size:14px; color:#555;">정답:</span> ${q.wordRef.en}`;
@@ -1105,7 +1098,6 @@ ${JSON.stringify(wordList)}`;
                 document.getElementById('otNextBtn').style.display = 'block'; otIsWaitingForNext = true; document.getElementById('otNextBtn').focus();
             }
         } else {
-            // 영->한 자가 채점
             inputEl.disabled = true; document.getElementById('otSubmitBtn').style.display = 'none'; fbArea.style.display = 'block';
             inputEl.style.display = 'none';
             fbArea.className = 'test-feedback feedback-selfval';
@@ -1125,7 +1117,7 @@ ${JSON.stringify(wordList)}`;
     function finishOnlineTest() { document.getElementById('otResultArea').style.display = 'none'; document.getElementById('otSetupArea').style.display = 'block'; }
 
 
-    // ----------------- 오늘의 학습 로직 (AI 배치 처리 및 유의어) ----------------- //
+    // ----------------- 오늘의 학습 로직 ----------------- //
     let tdQuestions = [];
     let currentTdIdx = 0;
     let tdStats = { correct: 0, incorrect: 0 };
@@ -1135,6 +1127,7 @@ ${JSON.stringify(wordList)}`;
         let dueEnSet = new Set(); let dueCount = 0; const now = Date.now();
         for(let f in db) {
             db[f].forEach(w => {
+                // 한 번이라도 테스트를 봤고, 다음 복습 시간이 현재보다 과거인 경우만 출제
                 if(w.nextReview && w.nextReview > 0 && w.nextReview <= now) {
                     let lowerEn = w.en.toLowerCase();
                     if(!dueEnSet.has(lowerEn)) { dueEnSet.add(lowerEn); dueCount++; }
@@ -1166,7 +1159,7 @@ ${JSON.stringify(wordList)}`;
             return { type: Math.random() > 0.5 ? 'koToEn' : 'enToKo', wordRef: w };
         }).sort(() => 0.5 - Math.random());
 
-        // ★ 일괄 AI 예문 생성 (배치 처리) ★
+        // AI 예문 일괄 생성
         const apiKey = localStorage.getItem('geminiApiKey');
         if (apiKey && tdQuestions.some(q => q.type === 'koToEn')) {
             document.getElementById('aiLoadingOverlay').style.display = 'flex';
@@ -1241,7 +1234,7 @@ ${JSON.stringify(wordList)}`;
                 speakWord(q.wordRef.en); 
                 document.getElementById('tdNextBtn').style.display = 'block'; tdIsWaitingForNext = true; document.getElementById('tdNextBtn').focus();
             } else {
-                // 오답 처리 전 유의어 판별 로직
+                // 유의어 판별 로직
                 if (checkSynonym(userAnsLower, q.wordRef.ko)) {
                     fbArea.style.display = 'block';
                     fbArea.className = 'test-feedback feedback-selfval';
@@ -1273,7 +1266,6 @@ ${JSON.stringify(wordList)}`;
     function finishTdUi() { saveDB(); document.getElementById('tdArea').style.display = 'none'; document.getElementById('tdResultArea').style.display = 'block'; }
     function quitTodayTest() { if(confirm('포기하시겠습니까? 푼 결과만 반영됩니다.')){ saveDB(); document.getElementById('tdArea').style.display = 'none'; document.getElementById('tdSetupArea').style.display = 'block'; renderTodaySetup(); } }
     function finishTodayTest() { document.getElementById('tdResultArea').style.display = 'none'; document.getElementById('tdSetupArea').style.display = 'block'; renderTodaySetup(); }
-
 
     // ----------------- 학습지(PDF) 생성 로직 ----------------- //
     function generateTest(useMax = false) {

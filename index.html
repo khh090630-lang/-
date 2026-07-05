@@ -10,13 +10,11 @@
         body { font-family: 'Pretendard', sans-serif; background: #f4f7f6; padding: 20px; overflow-x: hidden; }
         .container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         
-        /* 메인 타이틀 및 상단 헤더 영역 */
         .main-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
         h1 { color: #2c3e50; margin: 0; font-size: 26px; display: flex; align-items: center; gap: 10px; }
         .global-search-btn { background: #3498db; color: white; border: none; padding: 10px 18px; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 15px; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: background 0.2s; }
         .global-search-btn:hover { background: #2980b9; }
 
-        /* 탭 메뉴 */
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
         .tab-btn { flex: 1; padding: 10px; border: none; background: #e0e6ed; cursor: pointer; border-radius: 6px; font-weight: bold; min-width: 80px; white-space: nowrap; font-size: 13px;}
         .tab-btn.active { background: #3498db; color: white; }
@@ -27,7 +25,6 @@
         .section { display: none; }
         .section.active { display: block; }
         
-        /* 폴더 UI */
         .folder-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
         .folder { background: #f1c40f; padding: 20px; border-radius: 8px 8px 8px 8px; text-align: center; cursor: pointer; position: relative; font-weight: bold; color: #333; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.2s; }
         .folder:hover { transform: translateY(-5px); }
@@ -38,7 +35,6 @@
         button.action-btn:hover { background: #27ae60; }
         button.action-btn:disabled { background: #bdc3c7; cursor: not-allowed; }
         
-        /* 학습지 출력 UI */
         .worksheet-output { margin-top: 20px; border-top: 2px dashed #ccc; padding-top: 20px; }
         .worksheet-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; table-layout: fixed; }
         .worksheet-table td { border: 1px solid #ccc; padding: 12px 10px; font-size: 15px; vertical-align: middle; word-wrap: break-word; }
@@ -50,7 +46,6 @@
         .answer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-bottom: 20px; }
         .answer-item { font-size: 14px; background: #f9f9f9; padding: 8px; border-radius: 4px; border: 1px solid #eee; page-break-inside: avoid; }
 
-        /* 모달(단어 목록 & 전체 검색) UI 개편 */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
         .modal-content { background-color: #fff; margin: 3% auto; border-radius: 12px; width: 90%; max-width: 800px; height: 85vh; position: relative; padding: 0; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
         .modal-scroll-area { height: 100%; overflow-y: auto; padding: 20px 30px; box-sizing: border-box; }
@@ -72,7 +67,6 @@
         .bg-add { background: #fef9e7; border: 1px solid #f9e79f; }
         .bg-del { background: #fdedec; border: 1px solid #fadbd8; }
 
-        /* 플래시카드 & 온라인 테스트 스타일 */
         .fc-area, .test-area { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 0; overflow: hidden; }
         .fc-container { width: 100%; max-width: 350px; height: 300px; margin: 20px auto; perspective: 1000px; position: relative; user-select: none; }
         #fcSwipeWrapper { width: 100%; height: 100%; position: absolute; transform-origin: center bottom; cursor: grab; }
@@ -109,7 +103,7 @@
         .feedback-selfval { background: #fef9e7; color: #d35400; border: 1px solid #f39c12; }
 
         @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
-        .ai-loading { animation: pulse 1.5s infinite; color: #8e44ad; font-size: 18px; font-weight: bold; }
+        .ai-loading { animation: pulse 1.5s infinite; color: #8e44ad; font-size: 18px; font-weight: bold; margin-bottom: 10px; }
 
         @media (max-width: 600px) {
             body { padding: 10px; }
@@ -144,6 +138,15 @@
     </style>
 </head>
 <body>
+
+<!-- 전체 로딩 오버레이 (AI 일괄 생성용) -->
+<div id="aiLoadingOverlay" class="modal" style="display:none; align-items:center; justify-content:center; background-color: rgba(0,0,0,0.8);">
+    <div style="background:white; padding:40px; border-radius:12px; text-align:center; width: 80%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <div class="ai-loading">🤖 AI 예문 일괄 생성 중...</div>
+        <p id="aiLoadingText" style="margin-top:15px; font-size: 28px; font-weight:bold; color:#2c3e50;">0 / 0</p>
+        <p style="font-size:14px; color:#7f8c8d; margin-top: 10px; line-height: 1.5;">문제가 끊기지 않도록 테스트를 시작하기 전에<br>미리 맞춤형 예문 데이터를 준비하고 있습니다.</p>
+    </div>
+</div>
 
 <div class="container">
     <div class="main-header">
@@ -475,7 +478,7 @@
 
 <script>
     // ----------------- 환경 설정 ----------------- //
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKNe_iUIK3_arpOFfd5v5ewY_-OzBp5RYJ5Lm_xqaa2bOwWPsUPyy6vVsWYeTOkYM1/exec'; 
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxl1brYxZ5WywT5WugRPYqHYiybLrsZvUkI5KWFpuON0RKDtxQ8_luYaWaQ2Uvb9div/exec'; 
     let db = {};
     let currentFolder = ''; 
 
@@ -489,47 +492,84 @@
         window.speechSynthesis.speak(utterance);
     }
 
-    // ★ 업그레이드된 AI 예문 생성 함수 (최신 모델 반영 & 찌꺼기 제거 완벽 대응) ★
-    async function fetchAiSentence(en, ko, apiKey) {
-        // 구글 최신 모델인 gemini-3.5-flash로 주소 업데이트
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
-        const promptText = `주어진 영단어와 뜻을 활용하여 영어 예문과 한국어 해석을 작성해주세요.
-영단어: "${en}"
-뜻: "${ko}"
-
-조건:
-1. 영어 예문(en)에서 주어진 영단어(형태 변화 포함)가 들어갈 자리는 반드시 "_____" (밑줄 5개)로 비워두세요. 절대 원래 영단어를 노출하지 마세요.
-2. 한국어 해석(ko)은 아주 자연스럽게 작성하세요.
-3. 반드시 아래 JSON 형식으로만 응답하세요. 다른 부가 설명이나 기호는 일절 포함하지 마세요.
-{"en": "영어 예문 빈칸 포함", "ko": "한국어 해석"}`;
-
-        try {
-            const res = await fetch(url, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    contents: [{parts: [{text: promptText}]}],
-                    generationConfig: { responseMimeType: "application/json" }
-                })
-            });
-            const data = await res.json();
-            
-            // API 자체에서 거부(에러)한 경우 (키 오류 등)
-            if(data.error) {
-                console.error("API 응답 에러:", data.error.message);
-                alert("AI 연결 실패! API 키를 다시 확인해주세요.\n(사유: " + data.error.message + ")");
-                return null;
+    // ★ NEW: 유의어 판별 함수 ★
+    function checkSynonym(userAnsLower, targetKo) {
+        // 타겟 한글 뜻을 공백 제거 및 쉼표(/) 기준으로 배열화
+        const tKoArr = targetKo.split(/[,/]/).map(k => k.trim().replace(/\s+/g, ''));
+        
+        for (let f in db) {
+            for (let w of db[f]) {
+                if (w.en.toLowerCase() === userAnsLower) {
+                    const wKoArr = w.ko.split(/[,/]/).map(k => k.trim().replace(/\s+/g, ''));
+                    // 입력한 단어의 뜻 중에 타겟 단어의 뜻과 겹치거나 포함되는 것이 있는지 확인
+                    const isMatch = tKoArr.some(tk => wKoArr.some(wk => tk.includes(wk) || wk.includes(tk)));
+                    if (isMatch) return true;
+                }
             }
+        }
+        return false;
+    }
+
+    // ★ NEW: AI 예문 일괄 생성 함수 (Batch Processing) ★
+    async function prepareAiDataBatch(questions, apiKey, progressCallback) {
+        const koToEnQs = questions.filter(q => q.type === 'koToEn');
+        if(koToEnQs.length === 0) return;
+
+        const chunkSize = 15; // API 부하 방지를 위해 한 번에 15개씩 요청
+        let completed = 0;
+
+        for(let i = 0; i < koToEnQs.length; i += chunkSize) {
+            const chunk = koToEnQs.slice(i, i + chunkSize);
+            const wordList = chunk.map((q, idx) => ({ id: idx, en: q.wordRef.en, ko: q.wordRef.ko }));
             
-            let text = data.candidates[0].content.parts[0].text;
-            
-            // ★ AI가 제멋대로 추가하는 마크다운(```json) 찌꺼기 강제 제거 필터 ★
-            text = text.replace(/```json/gi, '').replace(/```/g, '').trim();
-            
-            return JSON.parse(text);
-        } catch(e) {
-            console.error("AI 예문 파싱 에러:", e);
-            return null;
+            progressCallback(completed, koToEnQs.length);
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            const promptText = `주어진 영단어와 뜻 목록을 바탕으로 각각의 영어 예문과 한국어 해석을 작성해주세요.
+조건:
+1. 영어 예문(en)에서 주어진 영단어가 들어갈 자리는 반드시 "_____" (밑줄 5개)로 비워두세요. 원래 영단어를 노출하지 마세요.
+2. 한국어 해석(ko)은 아주 자연스럽게 작성하세요.
+3. 반드시 아래 JSON 배열 형식으로만 응답하세요. 마크다운(\`\`\`json 등)이나 다른 설명은 절대 추가하지 마세요.
+[
+  {"id": 0, "en": "예문", "ko": "해석"},
+  {"id": 1, "en": "예문", "ko": "해석"}
+]
+
+단어 목록:
+${JSON.stringify(wordList)}`;
+
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        contents: [{parts: [{text: promptText}]}],
+                        generationConfig: { responseMimeType: "application/json" }
+                    })
+                });
+                const data = await res.json();
+                
+                if(data.error) {
+                    console.error("API 응답 에러:", data.error.message);
+                    break; 
+                }
+                
+                let text = data.candidates[0].content.parts[0].text;
+                text = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+                const parsed = JSON.parse(text);
+                
+                // 생성된 데이터를 원본 질문(chunk)에 매핑
+                parsed.forEach(p => {
+                    if (chunk[p.id]) {
+                        chunk[p.id].aiData = { en: p.en, ko: p.ko };
+                    }
+                });
+            } catch(e) {
+                console.error("AI 배치 파싱 에러:", e);
+                // 에러 발생 시 건너뛰고 다음 청크 진행 (실패한 문제는 기본 뜻 텍스트만 표시됨)
+            }
+            completed += chunk.length;
+            progressCallback(completed, koToEnQs.length);
         }
     }
 
@@ -912,13 +952,13 @@
     function retryUnknown() { fcList = document.getElementById('fcOrderSelect').value === 'sequential' ? [...fcUnknown].sort((a,b)=>a.id-b.id) : [...fcUnknown].sort(()=>0.5-Math.random()); fcIndex = 0; fcKnown = []; fcUnknown = []; document.getElementById('fcResult').style.display = 'none'; document.getElementById('fcArea').style.display = 'flex'; renderFlashcard(); }
     function quitFlashcards() { if(window.speechSynthesis) window.speechSynthesis.cancel(); document.getElementById('fcArea').style.display = 'none'; document.getElementById('fcSetupArea').style.display = 'block'; saveDB(); }
 
-    // ----------------- 온라인 테스트 로직 ----------------- //
+    // ----------------- 온라인 테스트 로직 (AI 배치 처리 및 유의어) ----------------- //
     let testQuestions = [];
     let currentTestIdx = 0;
     let otStats = { correct: 0, incorrect: 0 };
     let otIsWaitingForNext = false; 
 
-    function initOnlineTest(useMax = false) {
+    async function initOnlineTest(useMax = false) {
         const folder = document.getElementById('otFolderSelect').value;
         if(!folder) return alert('단어장을 선택해주세요.');
 
@@ -942,24 +982,18 @@
             if (overlapMode === 'no_overlap') {
                 enToKoCount = Math.ceil(targetWords.length / 2); koToEnCount = Math.floor(targetWords.length / 2);
             } else { enToKoCount = targetWords.length; koToEnCount = targetWords.length; }
-            alert(`안내: 가능한 모든 단어(${targetWords.length}개)를 활용하여 총 ${enToKoCount + koToEnCount}문제를 출제합니다.`);
             document.getElementById('otEnToKoCount').value = enToKoCount; document.getElementById('otKoToEnCount').value = koToEnCount;
         } else {
             let totalReq = enToKoCount + koToEnCount;
             if (overlapMode === 'no_overlap') {
                 if (totalReq > targetWords.length) {
-                    alert(`안내: 문제 수 초과. 가능한 최대 개수로 출제합니다.`);
                     let ratio = enToKoCount / totalReq; enToKoCount = Math.round(targetWords.length * ratio); koToEnCount = targetWords.length - enToKoCount;
                     document.getElementById('otEnToKoCount').value = enToKoCount; document.getElementById('otKoToEnCount').value = koToEnCount;
                 }
             } else {
-                let adjusted = false;
-                if (enToKoCount > targetWords.length) { enToKoCount = targetWords.length; adjusted = true; }
-                if (koToEnCount > targetWords.length) { koToEnCount = targetWords.length; adjusted = true; }
-                if (adjusted) {
-                    alert(`안내: 문제 수 초과. 가능한 최대 개수로 출제합니다.`);
-                    document.getElementById('otEnToKoCount').value = enToKoCount; document.getElementById('otKoToEnCount').value = koToEnCount;
-                }
+                if (enToKoCount > targetWords.length) enToKoCount = targetWords.length;
+                if (koToEnCount > targetWords.length) koToEnCount = targetWords.length;
+                document.getElementById('otEnToKoCount').value = enToKoCount; document.getElementById('otKoToEnCount').value = koToEnCount;
             }
         }
 
@@ -977,12 +1011,22 @@
 
         testQuestions = [...poolEnToKo, ...poolKoToEn].sort(() => 0.5 - Math.random()); 
 
+        // ★ 일괄 AI 예문 생성 (배치 처리) ★
+        const apiKey = localStorage.getItem('geminiApiKey');
+        if (apiKey && testQuestions.some(q => q.type === 'koToEn')) {
+            document.getElementById('aiLoadingOverlay').style.display = 'flex';
+            await prepareAiDataBatch(testQuestions, apiKey, (current, total) => {
+                document.getElementById('aiLoadingText').innerText = `${current} / ${total}`;
+            });
+            document.getElementById('aiLoadingOverlay').style.display = 'none';
+        }
+
         currentTestIdx = 0; otStats = { correct: 0, incorrect: 0 }; otIsWaitingForNext = false;
         document.getElementById('otSetupArea').style.display = 'none'; document.getElementById('otResultArea').style.display = 'none'; document.getElementById('otArea').style.display = 'flex';
         renderOtQuestion();
     }
 
-    async function renderOtQuestion() {
+    function renderOtQuestion() {
         if(currentTestIdx >= testQuestions.length) return finishTestUi();
         
         const q = testQuestions[currentTestIdx];
@@ -1001,24 +1045,16 @@
 
         if (q.type === 'koToEn') {
             document.getElementById('otQuestionType').innerText = "빈칸에 들어갈 영단어를 적으세요";
-            const apiKey = localStorage.getItem('geminiApiKey');
-            
-            if (apiKey) {
-                qtEl.innerHTML = '<div class="ai-loading">🤖 AI가 예문을 생성 중입니다...</div>';
-                const aiData = await fetchAiSentence(q.wordRef.en, q.wordRef.ko, apiKey);
-                if (aiData) {
-                    qtEl.innerHTML = `<div style="font-size:26px; color:#2c3e50; margin-bottom:10px; line-height:1.4;">${aiData.en}</div>
-                                      <div style="font-size:16px; color:#7f8c8d; font-weight:normal;">(${aiData.ko})</div>`;
-                } else {
-                    qtEl.innerText = q.wordRef.ko; 
-                }
+            if (q.aiData) {
+                qtEl.innerHTML = `<div style="font-size:26px; color:#2c3e50; margin-bottom:10px; line-height:1.4;">${q.aiData.en}</div>
+                                  <div style="font-size:16px; color:#7f8c8d; font-weight:normal;">(${q.aiData.ko})</div>`;
             } else {
                 qtEl.innerText = q.wordRef.ko; 
             }
         } else {
             document.getElementById('otQuestionType').innerText = "영단어를 보고 뜻을 적으세요";
             qtEl.innerText = q.wordRef.en;
-            speakWord(q.wordRef.en); // 영->한 일 때는 단어 소리내어 읽기
+            speakWord(q.wordRef.en);
         }
 
         inputEl.disabled = false; inputEl.style.display = 'block'; inputEl.focus();
@@ -1034,31 +1070,46 @@
 
     function submitOtAnswer() {
         const q = testQuestions[currentTestIdx];
-        const userAns = document.getElementById('otAnswerInput').value.trim();
-        if(!userAns) return alert('답을 입력해주세요.');
+        const userAnsLower = document.getElementById('otAnswerInput').value.trim().toLowerCase();
+        if(!userAnsLower) return alert('답을 입력해주세요.');
 
         const inputEl = document.getElementById('otAnswerInput');
-        inputEl.disabled = true; document.getElementById('otSubmitBtn').style.display = 'none';
-        
-        const fbArea = document.getElementById('otFeedbackArea'); fbArea.style.display = 'block';
+        const fbArea = document.getElementById('otFeedbackArea'); 
 
         if(q.type === 'koToEn') {
-            const isCorrect = userAns.toLowerCase() === q.wordRef.en.toLowerCase();
-            if(isCorrect) {
+            const targetEn = q.wordRef.en.toLowerCase();
+            
+            if(userAnsLower === targetEn) {
+                // 완전 정답
+                inputEl.disabled = true; document.getElementById('otSubmitBtn').style.display = 'none'; fbArea.style.display = 'block';
                 fbArea.className = 'test-feedback feedback-correct';
                 fbArea.innerHTML = '✅ 정답입니다!';
                 updateSRS(q.wordRef, true); otStats.correct++;
+                speakWord(q.wordRef.en); 
+                document.getElementById('otNextBtn').style.display = 'block'; otIsWaitingForNext = true; document.getElementById('otNextBtn').focus();
             } else {
+                // 오답 처리 전 유의어(Synonym) 판별 로직
+                if (checkSynonym(userAnsLower, q.wordRef.ko)) {
+                    fbArea.style.display = 'block';
+                    fbArea.className = 'test-feedback feedback-selfval';
+                    fbArea.innerHTML = `⚠️ <b>유의어입니다!</b> 문맥상 의도된 다른 단어를 입력해주세요.<br><span style="font-size:14px; color:#555;">(첫 글자 힌트: <b>${targetEn.charAt(0)}...</b>)</span>`;
+                    inputEl.value = ''; inputEl.focus();
+                    return; // 오답 처리하지 않고 함수 종료 (재입력 유도)
+                }
+
+                // 완전 오답
+                inputEl.disabled = true; document.getElementById('otSubmitBtn').style.display = 'none'; fbArea.style.display = 'block';
                 fbArea.className = 'test-feedback feedback-incorrect';
                 fbArea.innerHTML = `❌ 틀렸습니다!<br><span style="font-size:14px; color:#555;">정답:</span> ${q.wordRef.en}`;
                 updateSRS(q.wordRef, false); otStats.incorrect++;
+                document.getElementById('otNextBtn').style.display = 'block'; otIsWaitingForNext = true; document.getElementById('otNextBtn').focus();
             }
-            speakWord(q.wordRef.en); // 정답 확인 시 단어 발음 들려주기
-            document.getElementById('otNextBtn').style.display = 'block'; otIsWaitingForNext = true; document.getElementById('otNextBtn').focus();
         } else {
+            // 영->한 자가 채점
+            inputEl.disabled = true; document.getElementById('otSubmitBtn').style.display = 'none'; fbArea.style.display = 'block';
             inputEl.style.display = 'none';
             fbArea.className = 'test-feedback feedback-selfval';
-            fbArea.innerHTML = `<span style="font-size:14px; color:#7f8c8d;">내 답안:</span> <b style="color:#e67e22;">${userAns}</b><br><br><span style="font-size:14px; color:#7f8c8d;">실제 뜻:</span> <b>${q.wordRef.ko}</b>`;
+            fbArea.innerHTML = `<span style="font-size:14px; color:#7f8c8d;">내 답안:</span> <b style="color:#e67e22;">${document.getElementById('otAnswerInput').value}</b><br><br><span style="font-size:14px; color:#7f8c8d;">실제 뜻:</span> <b>${q.wordRef.ko}</b>`;
             document.getElementById('otSelfEvalBtns').style.display = 'flex';
         }
     }
@@ -1074,7 +1125,7 @@
     function finishOnlineTest() { document.getElementById('otResultArea').style.display = 'none'; document.getElementById('otSetupArea').style.display = 'block'; }
 
 
-    // ----------------- 오늘의 학습 로직 (AI 예문 연동) ----------------- //
+    // ----------------- 오늘의 학습 로직 (AI 배치 처리 및 유의어) ----------------- //
     let tdQuestions = [];
     let currentTdIdx = 0;
     let tdStats = { correct: 0, incorrect: 0 };
@@ -1097,7 +1148,7 @@
         else { btn.style.background = '#2ecc71'; btn.innerText = '오늘의 학습 시작하기'; }
     }
 
-    function initTodayTest() {
+    async function initTodayTest() {
         let dueWordsMap = new Map(); const now = Date.now();
         for(let f in db) {
             db[f].forEach(w => {
@@ -1115,12 +1166,22 @@
             return { type: Math.random() > 0.5 ? 'koToEn' : 'enToKo', wordRef: w };
         }).sort(() => 0.5 - Math.random());
 
+        // ★ 일괄 AI 예문 생성 (배치 처리) ★
+        const apiKey = localStorage.getItem('geminiApiKey');
+        if (apiKey && tdQuestions.some(q => q.type === 'koToEn')) {
+            document.getElementById('aiLoadingOverlay').style.display = 'flex';
+            await prepareAiDataBatch(tdQuestions, apiKey, (current, total) => {
+                document.getElementById('aiLoadingText').innerText = `${current} / ${total}`;
+            });
+            document.getElementById('aiLoadingOverlay').style.display = 'none';
+        }
+
         currentTdIdx = 0; tdStats = { correct: 0, incorrect: 0 }; tdIsWaitingForNext = false;
         document.getElementById('tdSetupArea').style.display = 'none'; document.getElementById('tdResultArea').style.display = 'none'; document.getElementById('tdArea').style.display = 'flex';
         renderTdQuestion();
     }
 
-    async function renderTdQuestion() {
+    function renderTdQuestion() {
         if(currentTdIdx >= tdQuestions.length) return finishTdUi();
         
         const q = tdQuestions[currentTdIdx];
@@ -1139,20 +1200,16 @@
 
         if (q.type === 'koToEn') {
             document.getElementById('tdQuestionType').innerText = "빈칸에 들어갈 영단어를 적으세요";
-            const apiKey = localStorage.getItem('geminiApiKey');
-            
-            if (apiKey) {
-                qtEl.innerHTML = '<div class="ai-loading">🤖 AI가 예문을 생성 중입니다...</div>';
-                const aiData = await fetchAiSentence(q.wordRef.en, q.wordRef.ko, apiKey);
-                if (aiData) {
-                    qtEl.innerHTML = `<div style="font-size:26px; color:#2c3e50; margin-bottom:10px; line-height:1.4;">${aiData.en}</div>
-                                      <div style="font-size:16px; color:#7f8c8d; font-weight:normal;">(${aiData.ko})</div>`;
-                } else { qtEl.innerText = q.wordRef.ko; }
-            } else { qtEl.innerText = q.wordRef.ko; }
+            if (q.aiData) {
+                qtEl.innerHTML = `<div style="font-size:26px; color:#2c3e50; margin-bottom:10px; line-height:1.4;">${q.aiData.en}</div>
+                                  <div style="font-size:16px; color:#7f8c8d; font-weight:normal;">(${q.aiData.ko})</div>`;
+            } else {
+                qtEl.innerText = q.wordRef.ko; 
+            }
         } else {
             document.getElementById('tdQuestionType').innerText = "영단어를 보고 뜻을 적으세요";
             qtEl.innerText = q.wordRef.en;
-            speakWord(q.wordRef.en); // 영단어 읽기
+            speakWord(q.wordRef.en); 
         }
 
         inputEl.disabled = false; inputEl.style.display = 'block'; inputEl.focus();
@@ -1168,28 +1225,41 @@
 
     function submitTdAnswer() {
         const q = tdQuestions[currentTdIdx];
-        const userAns = document.getElementById('tdAnswerInput').value.trim();
-        if(!userAns) return alert('답을 입력해주세요.');
+        const userAnsLower = document.getElementById('tdAnswerInput').value.trim().toLowerCase();
+        if(!userAnsLower) return alert('답을 입력해주세요.');
 
         const inputEl = document.getElementById('tdAnswerInput');
-        inputEl.disabled = true; document.getElementById('tdSubmitBtn').style.display = 'none';
-        const fbArea = document.getElementById('tdFeedbackArea'); fbArea.style.display = 'block';
+        const fbArea = document.getElementById('tdFeedbackArea'); 
 
         if(q.type === 'koToEn') {
-            const isCorrect = userAns.toLowerCase() === q.wordRef.en.toLowerCase();
-            if(isCorrect) {
+            const targetEn = q.wordRef.en.toLowerCase();
+            
+            if(userAnsLower === targetEn) {
+                inputEl.disabled = true; document.getElementById('tdSubmitBtn').style.display = 'none'; fbArea.style.display = 'block';
                 fbArea.className = 'test-feedback feedback-correct'; fbArea.innerHTML = '✅ 정답입니다! 복습 주기가 늘어납니다.';
                 updateSRS(q.wordRef, true); tdStats.correct++;
+                speakWord(q.wordRef.en); 
+                document.getElementById('tdNextBtn').style.display = 'block'; tdIsWaitingForNext = true; document.getElementById('tdNextBtn').focus();
             } else {
+                // 오답 처리 전 유의어 판별 로직
+                if (checkSynonym(userAnsLower, q.wordRef.ko)) {
+                    fbArea.style.display = 'block';
+                    fbArea.className = 'test-feedback feedback-selfval';
+                    fbArea.innerHTML = `⚠️ <b>유의어입니다!</b> 문맥상 의도된 다른 단어를 입력해주세요.<br><span style="font-size:14px; color:#555;">(첫 글자 힌트: <b>${targetEn.charAt(0)}...</b>)</span>`;
+                    inputEl.value = ''; inputEl.focus();
+                    return; 
+                }
+
+                inputEl.disabled = true; document.getElementById('tdSubmitBtn').style.display = 'none'; fbArea.style.display = 'block';
                 fbArea.className = 'test-feedback feedback-incorrect'; fbArea.innerHTML = `❌ 틀렸습니다!<br><span style="font-size:14px; color:#555;">정답:</span> ${q.wordRef.en}<br><span style="font-size:13px;">(5분 뒤에 다시 복습합니다)</span>`;
                 updateSRS(q.wordRef, false); tdStats.incorrect++;
+                document.getElementById('tdNextBtn').style.display = 'block'; tdIsWaitingForNext = true; document.getElementById('tdNextBtn').focus();
             }
-            speakWord(q.wordRef.en); // 정답 확인 시 발음 들려주기
-            document.getElementById('tdNextBtn').style.display = 'block'; tdIsWaitingForNext = true; document.getElementById('tdNextBtn').focus();
         } else {
+            inputEl.disabled = true; document.getElementById('tdSubmitBtn').style.display = 'none'; fbArea.style.display = 'block';
             inputEl.style.display = 'none';
             fbArea.className = 'test-feedback feedback-selfval';
-            fbArea.innerHTML = `<span style="font-size:14px; color:#7f8c8d;">내 답안:</span> <b style="color:#e67e22;">${userAns}</b><br><br><span style="font-size:14px; color:#7f8c8d;">실제 뜻:</span> <b>${q.wordRef.ko}</b>`;
+            fbArea.innerHTML = `<span style="font-size:14px; color:#7f8c8d;">내 답안:</span> <b style="color:#e67e22;">${document.getElementById('tdAnswerInput').value}</b><br><br><span style="font-size:14px; color:#7f8c8d;">실제 뜻:</span> <b>${q.wordRef.ko}</b>`;
             document.getElementById('tdSelfEvalBtns').style.display = 'flex';
         }
     }
@@ -1223,6 +1293,7 @@
         if (!useMax && enToKoCount === 0 && koToEnCount === 0) return alert('문제 수를 입력하거나 [모든 단어 출제] 버튼을 눌러주세요.');
 
         let targetWords = db[folder].filter(w => w.id >= start && w.id <= end);
+        
         if (statusFilter === 'know') targetWords = targetWords.filter(w => w.status === 'know');
         else if (statusFilter === 'unk') targetWords = targetWords.filter(w => w.status === 'unk');
         else if (statusFilter === 'none') targetWords = targetWords.filter(w => !w.status || w.status === '');
@@ -1232,7 +1303,6 @@
         if (useMax) {
             if (overlapMode === 'no_overlap') { enToKoCount = Math.ceil(targetWords.length / 2); koToEnCount = Math.floor(targetWords.length / 2); } 
             else { enToKoCount = targetWords.length; koToEnCount = targetWords.length; }
-            alert(`안내: 가능한 모든 단어(${targetWords.length}개)를 활용하여 총 ${enToKoCount + koToEnCount}문제를 출제합니다.`);
             document.getElementById('enToKoCount').value = enToKoCount; document.getElementById('koToEnCount').value = koToEnCount;
         } else {
             let totalReq = enToKoCount + koToEnCount;

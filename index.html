@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>나만의 단어장 & 학습지 생성기</title>
     <!-- PDF 다운로드를 위한 html2pdf 라이브러리 추가 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="[https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js](https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js)"></script>
     <style>
         body { font-family: 'Pretendard', sans-serif; background: #f4f7f6; padding: 20px; overflow-x: hidden; }
         .container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
@@ -196,7 +196,7 @@
             <input type="password" id="geminiApiKeyInput" placeholder="AI Studio에서 발급받은 API 키 입력 (AQ...)">
             <button class="action-btn" style="margin-top: 10px; background:#8e44ad;" onclick="saveApiKey()">API 키 저장하기</button>
             <div style="margin-top: 15px; font-size: 14px; font-weight:bold;">
-                👉 <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:#3498db; text-decoration: underline;">Gemini API Key 무료 발급받기 (클릭)</a>
+                👉 <a href="[https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)" target="_blank" style="color:#3498db; text-decoration: underline;">Gemini API Key 무료 발급받기 (클릭)</a>
             </div>
         </div>
     </div>
@@ -484,7 +484,7 @@
 
 <script>
     // ----------------- 환경 설정 ----------------- //
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKNe_iUIK3_arpOFfd5v5ewY_-OzBp5RYJ5Lm_xqaa2bOwWPsUPyy6vVsWYeTOkYM1/exec'; 
+    const SCRIPT_URL = '[https://script.google.com/macros/s/AKfycbzKNe_iUIK3_arpOFfd5v5ewY_-OzBp5RYJ5Lm_xqaa2bOwWPsUPyy6vVsWYeTOkYM1/exec](https://script.google.com/macros/s/AKfycbzKNe_iUIK3_arpOFfd5v5ewY_-OzBp5RYJ5Lm_xqaa2bOwWPsUPyy6vVsWYeTOkYM1/exec)'; 
     let db = {};
     let currentFolder = ''; 
 
@@ -513,22 +513,26 @@
         return false;
     }
 
-    // ★ 완벽하게 수정된 AI 예문 일괄 생성 함수 ★
+    // ★ 개선된 AI 예문 일괄 생성 함수 (오류 시 팝업 띄움 + 3.5 모델 고정) ★
     async function prepareAiDataBatch(questions, apiKey, progressCallback) {
         const koToEnQs = questions.filter(q => q.type === 'koToEn');
         if(koToEnQs.length === 0) return;
 
-        const chunkSize = 10; // 안정성을 위해 한 번에 10개씩 요청
+        const chunkSize = 10; 
         let completed = 0;
 
         for(let i = 0; i < koToEnQs.length; i += chunkSize) {
             const chunk = koToEnQs.slice(i, i + chunkSize);
-            const wordList = chunk.map((q, idx) => ({ id: idx, word: q.wordRef.en, meaning: q.wordRef.ko }));
+            // AI에게 넘길 때는 식별용 고유 tempId를 부여
+            const wordList = chunk.map((q, idx) => {
+                q.tempId = idx;
+                return { id: idx, word: q.wordRef.en, meaning: q.wordRef.ko };
+            });
             
             progressCallback(completed, koToEnQs.length);
 
-            // API 모델 주소를 확실하고 안정적인 gemini-1.5-flash 로 고정 (공백 절대 금지)
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            // API 모델 주소를 확실하고 안정적인 gemini-3.5-flash 로 고정
+            const url = `[https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=$){apiKey}`;
             const promptText = `Create English sentences with a blank for the given words.
 Rules:
 1. Replace the target 'word' in the English sentence with "_____" (5 underscores). Do NOT reveal the target word.
@@ -549,30 +553,41 @@ ${JSON.stringify(wordList)}`;
                 });
                 
                 if (!res.ok) {
-                    const errData = await res.json();
+                    const errData = await res.json().catch(() => ({}));
                     console.error("API 응답 에러:", errData);
                     document.getElementById('aiLoadingTitle').innerHTML = "⚠️ AI 연결 실패";
-                    document.getElementById('aiLoadingText').innerHTML = `<span style="font-size:16px; color:#e74c3c;">기본 뜻 모드로 전환합니다...</span>`;
-                    await new Promise(r => setTimeout(r, 2000)); // 에러 내용을 유저가 2초간 읽을 수 있도록 대기
+                    document.getElementById('aiLoadingText').innerHTML = `<span style="font-size:16px; color:#e74c3c;">모델 버전 오류 또는 키가 만료되었습니다.<br>일반 테스트 모드로 진행합니다.</span>`;
+                    await new Promise(r => setTimeout(r, 2500)); // 에러 내용을 유저가 2.5초간 읽을 수 있도록 대기
                     break; 
                 }
 
                 const data = await res.json();
+                if(data.error) {
+                    document.getElementById('aiLoadingTitle').innerHTML = "⚠️ AI 생성 거부";
+                    document.getElementById('aiLoadingText').innerHTML = `<span style="font-size:16px; color:#e74c3c;">API 키를 다시 확인해주세요.<br>일반 테스트 모드로 진행합니다.</span>`;
+                    await new Promise(r => setTimeout(r, 2500));
+                    break;
+                }
+                
                 let text = data.candidates[0].content.parts[0].text;
                 
-                // 마크다운 찌꺼기 강제 필터링
-                text = text.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
+                // 마크다운 찌꺼기 강제 필터링 및 JSON 안전 추출
+                const startIdx = text.indexOf('[');
+                const endIdx = text.lastIndexOf(']');
+                if(startIdx !== -1 && endIdx !== -1) {
+                    text = text.substring(startIdx, endIdx + 1);
+                }
                 const parsed = JSON.parse(text);
                 
                 parsed.forEach(p => {
-                    const match = chunk.find((_, idx) => idx === p.id);
+                    const match = chunk.find(c => c.tempId === p.id);
                     if (match) match.aiData = { en: p.en, ko: p.ko };
                 });
             } catch(e) {
                 console.error("AI 배치 파싱 에러:", e);
-                document.getElementById('aiLoadingTitle').innerHTML = "⚠️ AI 생성 에러";
-                document.getElementById('aiLoadingText').innerHTML = `<span style="font-size:16px; color:#e74c3c;">예문 처리에 실패하여 기본 모드로 전환합니다...</span>`;
-                await new Promise(r => setTimeout(r, 2000));
+                document.getElementById('aiLoadingTitle').innerHTML = "⚠️ AI 응답 오류";
+                document.getElementById('aiLoadingText').innerHTML = `<span style="font-size:16px; color:#e74c3c;">예문을 생성하지 못했습니다.<br>일반 테스트 모드로 진행합니다.</span>`;
+                await new Promise(r => setTimeout(r, 2500)); // 에러가 나더라도 2.5초 대기 후 넘어감
                 break;
             }
             completed += chunk.length;
@@ -590,7 +605,7 @@ ${JSON.stringify(wordList)}`;
         }
     }
 
-    // ----------------- 데이터 동기화 로직 (구글 앱스 스크립트 Throttle 방지 Debounce 적용) ----------------- //
+    // ----------------- 데이터 동기화 로직 (Throttle 방지 Debounce 적용) ----------------- //
     let saveTimeout = null;
     
     async function loadDB() {
@@ -632,7 +647,7 @@ ${JSON.stringify(wordList)}`;
                 });
                 console.log("구글 시트 연동 완료");
             } catch (error) { console.error('네트워크 에러', error); }
-        }, 3000); // 3초 동안 추가 변경이 없으면 비로소 구글로 전송
+        }, 3000); 
     }
 
     function initUI() {
@@ -904,7 +919,7 @@ ${JSON.stringify(wordList)}`;
             });
         }
         
-        // 정답을 체크할 때마다 즉시 브라우저 로컬 저장 및 구글시트 연동 (데이터 날아감 완벽 방지)
+        // ★ 정답/오답 즉시 로컬에 우선 저장하여 앱이 중간에 꺼져도 망각곡선 데이터 유실을 100% 방지 ★
         saveDB(); 
     }
 
@@ -1075,7 +1090,7 @@ ${JSON.stringify(wordList)}`;
         } else {
             document.getElementById('otQuestionType').innerText = "영단어를 보고 뜻을 적으세요";
             qtEl.innerText = q.wordRef.en;
-            speakWord(q.wordRef.en); // 영->한 일 때는 단어 소리내어 읽기
+            speakWord(q.wordRef.en);
         }
 
         inputEl.disabled = false; inputEl.style.display = 'block'; inputEl.focus();

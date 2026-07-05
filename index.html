@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <!-- 모바일 UI 최적화를 위한 뷰포트 메타 태그 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>나만의 단어장 & 학습지 생성기</title>
     <!-- PDF 다운로드를 위한 html2pdf 라이브러리 추가 -->
@@ -315,7 +316,7 @@
         <div id="tdSetupArea" style="text-align: center; padding: 40px 20px; background: white; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
             <h2 style="color: #2c3e50; margin-bottom: 10px;">망각 곡선 기반 복습</h2>
             <p style="color: #7f8c8d; font-size: 16px; margin-bottom: 30px;">
-                지금 복습 타이밍이 된 단어들을 모아 보여줍니다.<br>
+                지금 복습 타이밍이 도래한 단어들을 모아 보여줍니다.<br>
                 <span style="font-size: 13px;">(틀리면 5분 뒤, 맞히면 1일 → 3일 → 7일... 연장)</span>
             </p>
             
@@ -344,7 +345,7 @@
         </div>
 
         <div id="tdResultArea" class="fc-result" style="display: none;">
-            <h2 style="margin-top:0; color:#2c3e50;">학습 완료! 🚀</h2>
+            <h2 style="margin-top:0; color:#2c3e50;">오늘의 학습 완료! 🚀</h2>
             <p style="color: #7f8c8d; font-size: 16px;">수고하셨습니다! 틀린 단어는 5분 뒤에 다시 나타납니다.</p>
             <button class="action-btn" style="margin-top: 20px;" onclick="finishTodayTest()">메인으로 돌아가기</button>
         </div>
@@ -457,9 +458,19 @@
 
 <script>
     // ----------------- 환경 설정 ----------------- //
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKNe_iUIK3_arpOFfd5v5ewY_-OzBp5RYJ5Lm_xqaa2bOwWPsUPyy6vVsWYeTOkYM1/exec'; 
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxl1brYxZ5WywT5WugRPYqHYiybLrsZvUkI5KWFpuON0RKDtxQ8_luYaWaQ2Uvb9div/exec'; 
     let db = {};
     let currentFolder = ''; 
+
+    // ★ NEW: TTS (음성 읽어주기) 유틸리티 함수 ★
+    function speakWord(text) {
+        if (!window.speechSynthesis) return; // 미지원 브라우저 방어
+        window.speechSynthesis.cancel(); // 기존에 읽고 있던 소리가 있다면 취소
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US'; // 미국 영어 발음
+        utterance.rate = 1.0;     // 기본 속도
+        window.speechSynthesis.speak(utterance);
+    }
 
     // ----------------- 데이터 로드/저장 ----------------- //
     async function loadDB() {
@@ -758,7 +769,7 @@
     }
 
 
-    // ----------------- ★ NEW: 스마트 복습 (SRS) 코어 알고리즘 ★ ----------------- //
+    // ----------------- 스마트 복습 (SRS) 코어 알고리즘 ----------------- //
     function updateSRS(wordRef, isCorrect) {
         const now = Date.now();
         let newSrs = 0, newStatus = '', newNext = 0;
@@ -791,7 +802,7 @@
     }
 
 
-    // ----------------- 플래시카드 로직 ----------------- //
+    // ----------------- ★ NEW: 플래시카드 로직 (TTS 음성 추가) ★ ----------------- //
     let fcList = [], fcIndex = 0, fcKnown = [], fcUnknown = [];
     let fcIsDragging = false, fcStartX = 0, fcCurrentX = 0, fcDidDrag = false;
     const fcSwipeWrapper = document.getElementById('fcSwipeWrapper'), fcCard = document.getElementById('fcCard');
@@ -811,14 +822,26 @@
         document.getElementById('fcSetupArea').style.display = 'none'; document.getElementById('fcResult').style.display = 'none'; document.getElementById('fcArea').style.display = 'flex';
         renderFlashcard();
     }
+    
     function renderFlashcard() {
         if(fcIndex >= fcList.length) return showFlashcardResult();
         const cw = fcList[fcIndex]; document.getElementById('fcProgress').innerText = `카드 ${fcIndex + 1} / ${fcList.length}`;
         fcCard.style.transition = 'none'; fcCard.classList.remove('flipped'); void fcCard.offsetWidth;
         document.getElementById('fcFront').innerText = cw.en; document.getElementById('fcBack').innerText = cw.ko;
         fcSwipeWrapper.style.transition = 'none'; fcSwipeWrapper.style.transform = `translateX(0px) rotateZ(0deg) scale(1)`; fcCard.style.transition = '';
+        
+        // ★ 새로운 단어가 나타날 때 영단어를 소리내어 읽어줌 ★
+        speakWord(cw.en);
     }
-    function toggleFlip() { if(!fcDidDrag) fcCard.classList.toggle('flipped'); }
+    
+    // 카드를 클릭해서 뒤집었을 땐 소리 끄기 처리
+    function toggleFlip() { 
+        if(!fcDidDrag) {
+            fcCard.classList.toggle('flipped'); 
+            if(window.speechSynthesis) window.speechSynthesis.cancel(); // 뒤집으면 읽기 멈춤
+        }
+    }
+    
     function recordSwipe(dir) {
         const w = fcList[fcIndex]; 
         const isCorrect = (dir === 'right');
@@ -846,7 +869,11 @@
         } else { ul.innerHTML = '<p style="color:#27ae60; font-weight:bold;">모두 외웠습니다!</p>'; document.getElementById('fcRetryBtn').style.display = 'none'; }
     }
     function retryUnknown() { fcList = document.getElementById('fcOrderSelect').value === 'sequential' ? [...fcUnknown].sort((a,b)=>a.id-b.id) : [...fcUnknown].sort(()=>0.5-Math.random()); fcIndex = 0; fcKnown = []; fcUnknown = []; document.getElementById('fcResult').style.display = 'none'; document.getElementById('fcArea').style.display = 'flex'; renderFlashcard(); }
-    function quitFlashcards() { document.getElementById('fcArea').style.display = 'none'; document.getElementById('fcSetupArea').style.display = 'block'; saveDB(); }
+    
+    function quitFlashcards() { 
+        if(window.speechSynthesis) window.speechSynthesis.cancel();
+        document.getElementById('fcArea').style.display = 'none'; document.getElementById('fcSetupArea').style.display = 'block'; saveDB(); 
+    }
 
     // ----------------- 온라인 테스트 로직 ----------------- //
     let testQuestions = [];
@@ -955,6 +982,8 @@
         document.getElementById('otNextBtn').style.display = 'none';
         
         otIsWaitingForNext = false;
+        
+        // ★ 온라인 테스트에서도 영단어를 맞혀야 할 때 예문/소리가 필요하다면 추가 가능 (현재는 제외)
     }
 
     function handleOtKeyPress(e) {
@@ -1028,7 +1057,7 @@
     function finishOnlineTest() { document.getElementById('otResultArea').style.display = 'none'; document.getElementById('otSetupArea').style.display = 'block'; }
 
 
-    // ----------------- ★ NEW: 오늘의 학습 (망각 곡선 연동) 로직 ★ ----------------- //
+    // ----------------- 오늘의 학습 (망각 곡선 연동) 로직 ----------------- //
     let tdQuestions = [];
     let currentTdIdx = 0;
     let tdStats = { correct: 0, incorrect: 0 };
@@ -1040,7 +1069,6 @@
         const now = Date.now();
         for(let f in db) {
             db[f].forEach(w => {
-                // 수정된 부분: 한 번 이상 학습했고(nextReview > 0), 복습 시간이 도래한 단어만 가져옴!
                 if(w.nextReview && w.nextReview > 0 && w.nextReview <= now) {
                     let lowerEn = w.en.toLowerCase();
                     if(!dueEnSet.has(lowerEn)) {
@@ -1066,7 +1094,6 @@
         const now = Date.now();
         for(let f in db) {
             db[f].forEach(w => {
-                // 수정된 부분 동일 적용
                 if(w.nextReview && w.nextReview > 0 && w.nextReview <= now) {
                     let lowerEn = w.en.toLowerCase();
                     if(!dueWordsMap.has(lowerEn)) {
@@ -1197,7 +1224,7 @@
             let totalReq = enToKoCount + koToEnCount;
             if (overlapMode === 'no_overlap') {
                 if (totalReq > targetWords.length) {
-                    alert(`안내: 요청하신 문제 수(${totalReq}문제)가 출제 가능한 단어 수(${targetWords.length}개)를 초과했습니다.\n가능한 최대 개수로 자동 조정하여 출제합니다.`);
+                    alert(`안내: 요청하신 문제 수(${totalReq}문제)가 출제 가능한 단어 수(${targetWords.length}개)를 초 초과했습니다.\n가능한 최대 개수로 자동 조정하여 출제합니다.`);
                     let ratio = enToKoCount / totalReq;
                     enToKoCount = Math.round(targetWords.length * ratio);
                     koToEnCount = targetWords.length - enToKoCount;

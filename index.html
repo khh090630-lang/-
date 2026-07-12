@@ -6,140 +6,281 @@
     <title>나만의 단어장 & 학습지 생성기</title>
     <!-- PDF 다운로드를 위한 html2pdf 라이브러리 추가 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- 구글 머티리얼 심볼 아이콘 추가 -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+    
     <style>
-        body { font-family: 'Pretendard', sans-serif; background: #f4f7f6; padding: 20px; overflow-x: hidden; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        
-        /* 메인 타이틀 및 상단 헤더 영역 */
-        .main-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-        h1 { color: #2c3e50; margin: 0; font-size: 26px; display: flex; align-items: center; gap: 10px; }
-        .global-search-btn { background: #3498db; color: white; border: none; padding: 10px 18px; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 15px; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: background 0.2s; }
-        .global-search-btn:hover { background: #2980b9; }
+        /* 기본 리셋 및 다크모드 색상 변수 */
+        :root {
+            --bg-color: #131314;
+            --sidebar-bg: #1e1f20;
+            --card-bg: #1e1f20;
+            --card-hover: #282a2c;
+            --text-primary: #e3e3e3;
+            --text-secondary: #c4c7c5;
+            --border-color: #444746;
+            --accent-blue: #8ab4f8;
+            --accent-blue-bg: rgba(138, 180, 248, 0.1);
+            --danger-color: #f28b82;
+            --danger-bg: rgba(242, 139, 130, 0.1);
+            --success-color: #81c995;
+            --success-bg: rgba(129, 201, 149, 0.1);
+            --warning-color: #fdd663;
+            --warning-bg: rgba(253, 214, 99, 0.1);
+            --font-family: 'Pretendard', sans-serif;
+        }
 
-        /* 탭 메뉴 */
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .tab-btn { flex: 1; padding: 10px; border: none; background: #e0e6ed; cursor: pointer; border-radius: 6px; font-weight: bold; min-width: 80px; white-space: nowrap; font-size: 13px;}
-        .tab-btn.active { background: #3498db; color: white; }
-        .tab-today { background: #f39c12; color: white; }
-        .tab-today.active { background: #d35400; }
-        .tab-setting { background: #95a5a6; color: white; flex-grow: 0.5; }
-        .tab-setting.active { background: #7f8c8d; }
-        .section { display: none; }
+        body { 
+            font-family: var(--font-family); 
+            background: var(--bg-color); 
+            color: var(--text-primary);
+            margin: 0; 
+            padding: 0;
+            height: 100vh;
+            overflow: hidden; 
+            display: flex;
+        }
+
+        /* 머티리얼 아이콘 기본 정렬 */
+        .material-symbols-outlined {
+            vertical-align: middle;
+            font-size: 20px;
+        }
+
+        /* 스크롤바 커스텀 */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #5f6368; }
+
+        /* 대시보드 레이아웃 */
+        .sidebar {
+            width: 260px;
+            background: var(--sidebar-bg);
+            padding: 20px 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border-right: 1px solid var(--border-color);
+            box-sizing: border-box;
+            flex-shrink: 0;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .container { 
+            max-width: 900px; 
+            margin: auto; 
+        }
+        
+        /* 상단 헤더 (사이드바 내부 및 메인) */
+        .sidebar-header {
+            margin-bottom: 20px;
+            padding: 0 10px;
+        }
+        h1 { 
+            color: var(--text-primary); 
+            margin: 0; 
+            font-size: 20px; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            font-weight: 600;
+        }
+        h3 { color: var(--text-primary); font-weight: 600; margin-top: 0; }
+        
+        .global-search-btn { 
+            position: absolute;
+            top: 25px;
+            right: 40px;
+            background: var(--card-bg); 
+            color: var(--text-primary); 
+            border: 1px solid var(--border-color); 
+            padding: 10px 18px; 
+            border-radius: 24px; 
+            cursor: pointer; 
+            font-size: 14px; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            transition: all 0.2s; 
+        }
+        .global-search-btn:hover { background: var(--card-hover); border-color: var(--accent-blue); color: var(--accent-blue); }
+
+        /* 탭 메뉴 (사이드바 버튼) */
+        .tab-btn { 
+            width: 100%;
+            padding: 14px 16px; 
+            border: none; 
+            background: transparent; 
+            cursor: pointer; 
+            border-radius: 12px; 
+            color: var(--text-secondary);
+            font-size: 15px;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+        }
+        .tab-btn:hover { background: var(--card-hover); color: var(--text-primary); }
+        .tab-btn.active { background: var(--accent-blue-bg); color: var(--accent-blue); font-weight: bold; }
+        
+        .tab-today { position: relative; }
+        .tab-today.active { background: var(--warning-bg); color: var(--warning-color); }
+        
+        .section { display: none; animation: fadeIn 0.3s ease; }
         .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
         /* 폴더 UI */
-        .folder-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
-        .folder { background: #f1c40f; padding: 20px; border-radius: 8px 8px 8px 8px; text-align: center; cursor: pointer; position: relative; font-weight: bold; color: #333; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.2s; }
-        .folder:hover { transform: translateY(-5px); }
-        .folder::before { content: ''; position: absolute; top: -10px; left: 0; width: 40%; height: 10px; background: #f1c40f; border-radius: 8px 8px 0 0; }
+        .folder-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; }
+        .folder { 
+            background: var(--card-bg); 
+            border: 1px solid var(--border-color);
+            padding: 24px 20px; 
+            border-radius: 16px; 
+            text-align: center; 
+            cursor: pointer; 
+            color: var(--text-primary); 
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .folder:hover { background: var(--card-hover); border-color: var(--accent-blue); transform: translateY(-3px); }
+        .folder .material-symbols-outlined { font-size: 36px; color: var(--accent-blue); font-variation-settings: 'FILL' 1; }
         
-        textarea, input, select { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
-        button.action-btn { width: 100%; padding: 12px; background: #2ecc71; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; transition: background 0.2s; }
-        button.action-btn:hover { background: #27ae60; }
-        button.action-btn:disabled { background: #bdc3c7; cursor: not-allowed; }
+        /* 폼 요소 */
+        textarea, input, select { 
+            width: 100%; 
+            padding: 14px; 
+            margin: 8px 0; 
+            box-sizing: border-box; 
+            border: 1px solid var(--border-color); 
+            background: var(--bg-color);
+            color: var(--text-primary);
+            border-radius: 10px; 
+            font-size: 14px; 
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        textarea:focus, input:focus, select:focus { border-color: var(--accent-blue); }
         
-        /* 학습지 출력 UI */
-        .worksheet-output { margin-top: 20px; border-top: 2px dashed #ccc; padding-top: 20px; }
+        button.action-btn { 
+            width: 100%; 
+            padding: 14px; 
+            background: var(--accent-blue); 
+            color: #000; 
+            border: none; 
+            border-radius: 10px; 
+            font-size: 15px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            transition: opacity 0.2s; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        button.action-btn:hover { opacity: 0.85; }
+        button.action-btn:disabled { background: var(--border-color); color: var(--text-secondary); cursor: not-allowed; }
+        
+        /* 모달 및 테이블 UI 개편 */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); backdrop-filter: blur(5px); }
+        .modal-content { background-color: var(--sidebar-bg); margin: 3% auto; border-radius: 20px; width: 90%; max-width: 900px; height: 85vh; position: relative; padding: 0; overflow: hidden; border: 1px solid var(--border-color); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+        .modal-scroll-area { height: 100%; overflow-y: auto; padding: 30px; box-sizing: border-box; }
+        
+        .close-btn { position: absolute; top: 20px; right: 20px; color: var(--text-secondary); cursor: pointer; z-index: 100; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .close-btn:hover { color: var(--text-primary); border-color: var(--text-primary); }
+        
+        .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px; }
+        
+        .word-table { width: 100%; border-collapse: collapse; margin-top: 5px; color: var(--text-primary); }
+        .word-table th, .word-table td { border: 1px solid var(--border-color); padding: 12px; text-align: left; vertical-align: middle; font-size: 14px;}
+        .word-table th { background-color: var(--bg-color); position: sticky; top: 0; z-index: 2; font-weight: 500; color: var(--text-secondary);} 
+        
+        .btn-small { padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; margin-right: 4px; font-weight: 500; transition: opacity 0.2s;}
+        .btn-small:hover { opacity: 0.8; }
+        .btn-edit { background-color: rgba(138, 180, 248, 0.15); color: var(--accent-blue); border: 1px solid rgba(138, 180, 248, 0.3); }
+        .btn-delete { background-color: rgba(242, 139, 130, 0.15); color: var(--danger-color); border: 1px solid rgba(242, 139, 130, 0.3); }
+        .btn-save { background-color: rgba(129, 201, 149, 0.15); color: var(--success-color); border: 1px solid rgba(129, 201, 149, 0.3); }
+        
+        .insert-row { display: flex; gap: 8px; padding: 15px; border-radius: 10px; margin-bottom: 15px; align-items: center; }
+        .insert-row input { margin: 0; padding: 10px; }
+        .bg-add { background: rgba(253, 214, 99, 0.05); border: 1px solid rgba(253, 214, 99, 0.2); }
+        .bg-del { background: rgba(242, 139, 130, 0.05); border: 1px solid rgba(242, 139, 130, 0.2); }
+
+        /* 플래시카드 & 온라인 테스트 스타일 */
+        .fc-area, .test-area { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 0; overflow: hidden; }
+        .fc-container { width: 100%; max-width: 380px; height: 350px; margin: 20px auto; perspective: 1000px; position: relative; user-select: none; }
+        #fcSwipeWrapper { width: 100%; height: 100%; position: absolute; transform-origin: center bottom; cursor: grab; }
+        #fcSwipeWrapper:active { cursor: grabbing; }
+        #fcCard { width: 100%; height: 100%; position: relative; transition: transform 0.4s; transform-style: preserve-3d; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #fcCard.flipped { transform: rotateY(180deg); }
+        
+        .fc-face { width: 100%; height: 100%; position: absolute; backface-visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; border-radius: 20px; padding: 30px; box-sizing: border-box; text-align: center; word-break: keep-all; pointer-events: none; }
+        .fc-front { background: var(--card-bg); color: var(--text-primary); border: 2px solid var(--border-color); }
+        .fc-back { background: var(--accent-blue-bg); color: var(--accent-blue); border: 2px solid var(--accent-blue); transform: rotateY(180deg); font-size: 26px; }
+        
+        .fc-controls { display: flex; justify-content: center; gap: 15px; margin-top: 20px; width: 100%; max-width: 380px; }
+        .fc-btn { flex: 1; padding: 16px; font-size: 15px; font-weight: bold; border: none; border-radius: 12px; cursor: pointer; color: #000; transition: transform 0.1s, opacity 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;}
+        .fc-btn:active { transform: scale(0.95); }
+        .fc-btn-no { background: var(--danger-color); }
+        .fc-btn-yes { background: var(--success-color); }
+        
+        .fc-result { background: var(--card-bg); border-radius: 16px; padding: 30px; border: 1px solid var(--border-color); text-align: center; width: 100%; max-width: 600px; margin: 0 auto; }
+        .fc-word-pill { display: inline-block; padding: 6px 14px; border-radius: 20px; margin: 4px; font-size: 14px; font-weight: 500; }
+        .fc-word-pill.know { background: var(--success-bg); color: var(--success-color); border: 1px solid rgba(129, 201, 149, 0.3); }
+        .fc-word-pill.unk { background: var(--danger-bg); color: var(--danger-color); border: 1px solid rgba(242, 139, 130, 0.3); }
+        
+        .status-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; white-space: nowrap; }
+        .status-know { background: var(--success-bg); color: var(--success-color); }
+        .status-unk { background: var(--danger-bg); color: var(--danger-color); }
+        .status-none { background: rgba(255,255,255,0.1); color: var(--text-secondary); }
+
+        .test-card { width: 100%; max-width: 500px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 40px 30px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin: 20px auto; min-height: 250px; display: flex; flex-direction: column; justify-content: center;}
+        .test-question-type { font-size: 13px; color: var(--accent-blue); font-weight: bold; margin-bottom: 15px; letter-spacing: 1px;}
+        .test-question-text { font-size: 32px; font-weight: bold; color: var(--text-primary); margin-bottom: 30px; word-break: keep-all; line-height: 1.4;}
+        .test-input { font-size: 20px; text-align: center; padding: 18px; border: 2px solid var(--border-color); border-radius: 12px; width: 100%; margin-bottom: 20px; background: var(--bg-color);}
+        
+        .test-feedback { margin-top: 15px; padding: 18px; border-radius: 12px; font-weight: 500; display: none; font-size: 16px; line-height: 1.5; }
+        .feedback-correct { background: var(--success-bg); color: var(--success-color); border: 1px solid rgba(129, 201, 149, 0.3); }
+        .feedback-incorrect { background: var(--danger-bg); color: var(--danger-color); border: 1px solid rgba(242, 139, 130, 0.3); }
+        .feedback-selfval { background: var(--warning-bg); color: var(--warning-color); border: 1px solid rgba(253, 214, 99, 0.3); }
+
+        /* 학습지 출력 UI (프린트/PDF 용이므로 강제 라이트모드 셋팅) */
+        .worksheet-output { margin-top: 30px; border-top: 1px solid var(--border-color); padding-top: 30px; color: #000; }
+        .pdf-wrapper { background: #fff; padding: 40px; border-radius: 8px; }
         .worksheet-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; table-layout: fixed; }
         .worksheet-table td { border: 1px solid #ccc; padding: 12px 10px; font-size: 15px; vertical-align: middle; word-wrap: break-word; }
         .worksheet-table .q-cell { width: 25%; font-weight: 500; background-color: #fafafa; }
         .worksheet-table .a-cell { width: 25%; }
         .worksheet-table tr { page-break-inside: avoid; } 
-
-        .answer-key { margin-top: 40px; padding-top: 20px; border-top: 2px solid #2c3e50; page-break-before: always; }
+        .answer-key { margin-top: 40px; padding-top: 20px; border-top: 2px solid #333; page-break-before: always; }
         .answer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-bottom: 20px; }
         .answer-item { font-size: 14px; background: #f9f9f9; padding: 8px; border-radius: 4px; border: 1px solid #eee; page-break-inside: avoid; }
 
-        /* 모달(단어 목록 & 전체 검색) UI 개편 */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-        .modal-content { background-color: #fff; margin: 3% auto; border-radius: 12px; width: 90%; max-width: 800px; height: 85vh; position: relative; padding: 0; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        .modal-scroll-area { height: 100%; overflow-y: auto; padding: 20px 30px; box-sizing: border-box; }
-        .modal-scroll-area::-webkit-scrollbar { width: 6px; }
-        .modal-scroll-area::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
-        .close-btn { position: absolute; top: 12px; right: 15px; color: #555; font-size: 24px; font-weight: bold; cursor: pointer; z-index: 100; background: rgba(255, 255, 255, 0.95); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transition: background 0.2s; }
-        .close-btn:hover { background: #f1c40f; color: white; }
-        .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 15px; padding-right: 40px; }
-        .word-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
-        .word-table th, .word-table td { border: 1px solid #ddd; padding: 10px; text-align: left; vertical-align: middle; }
-        .word-table th { background-color: #f4f7f6; position: sticky; top: 0; z-index: 2; box-shadow: 0 1px 2px rgba(0,0,0,0.1); } 
-        .word-table input { padding: 5px; width: 90%; margin: 0; }
-        .btn-small { padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; margin-right: 4px; font-weight: bold; }
-        .btn-edit { background-color: #3498db; color: white; }
-        .btn-delete { background-color: #e74c3c; color: white; }
-        .btn-save { background-color: #2ecc71; color: white; }
-        .insert-row { display: flex; gap: 8px; padding: 10px; border-radius: 6px; margin-bottom: 10px; align-items: center; }
-        .insert-row input { margin: 0; padding: 8px; }
-        .bg-add { background: #fef9e7; border: 1px solid #f9e79f; }
-        .bg-del { background: #fdedec; border: 1px solid #fadbd8; }
+        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+        .ai-loading { animation: pulse 1.5s infinite; color: var(--accent-blue); font-size: 18px; font-weight: bold; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
-        /* 플래시카드 & 온라인 테스트 스타일 */
-        .fc-area, .test-area { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 0; overflow: hidden; }
-        .fc-container { width: 100%; max-width: 350px; height: 300px; margin: 20px auto; perspective: 1000px; position: relative; user-select: none; }
-        #fcSwipeWrapper { width: 100%; height: 100%; position: absolute; transform-origin: center bottom; cursor: grab; }
-        #fcSwipeWrapper:active { cursor: grabbing; }
-        #fcCard { width: 100%; height: 100%; position: relative; transition: transform 0.4s; transform-style: preserve-3d; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        #fcCard.flipped { transform: rotateY(180deg); }
-        .fc-face { width: 100%; height: 100%; position: absolute; backface-visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; border-radius: 16px; padding: 20px; box-sizing: border-box; text-align: center; word-break: keep-all; pointer-events: none; }
-        .fc-front { background: #fff; color: #2c3e50; border: 4px solid #3498db; }
-        .fc-back { background: #fef9e7; color: #d35400; border: 4px solid #f39c12; transform: rotateY(180deg); font-size: 26px; }
-        .fc-controls { display: flex; justify-content: center; gap: 15px; margin-top: 15px; width: 100%; max-width: 350px; }
-        .fc-btn { flex: 1; padding: 15px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; color: white; transition: transform 0.1s; }
-        .fc-btn:active { transform: scale(0.95); }
-        .fc-btn-no { background: #e74c3c; box-shadow: 0 4px 0 #c0392b; }
-        .fc-btn-yes { background: #2ecc71; box-shadow: 0 4px 0 #27ae60; }
-        
-        .fc-result { background: #fdfefe; border-radius: 8px; padding: 20px; border: 1px solid #ddd; text-align: center; width: 100%; }
-        .fc-word-pill { display: inline-block; padding: 5px 12px; border-radius: 20px; margin: 4px; font-size: 14px; font-weight: bold; }
-        .fc-word-pill.know { background: #d5f5e3; color: #27ae60; border: 1px solid #2ecc71; }
-        .fc-word-pill.unk { background: #fadbd8; color: #c0392b; border: 1px solid #e74c3c; }
-        
-        .status-badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; white-space: nowrap; }
-        .status-know { background: #d5f5e3; color: #27ae60; border: 1px solid #2ecc71; }
-        .status-unk { background: #fadbd8; color: #c0392b; border: 1px solid #e74c3c; }
-        .status-none { background: #eee; color: #888; border: 1px solid #ccc; }
-
-        .test-card { width: 100%; max-width: 450px; background: white; border: 2px solid #3498db; border-radius: 12px; padding: 30px 20px; text-align: center; box-shadow: 0 8px 20px rgba(0,0,0,0.1); margin: 20px auto; min-height: 250px; display: flex; flex-direction: column; justify-content: center;}
-        .test-question-type { font-size: 14px; color: #3498db; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px;}
-        .test-question-text { font-size: 32px; font-weight: bold; color: #2c3e50; margin-bottom: 25px; word-break: keep-all; line-height: 1.4;}
-        .test-input { font-size: 20px; text-align: center; padding: 15px; border: 2px solid #bdc3c7; border-radius: 8px; width: 100%; margin-bottom: 20px; outline: none; transition: border-color 0.2s;}
-        .test-input:focus { border-color: #3498db; }
-        .test-feedback { margin-top: 15px; padding: 15px; border-radius: 8px; font-weight: bold; display: none; font-size: 18px;}
-        .feedback-correct { background: #d5f5e3; color: #27ae60; border: 1px solid #2ecc71; }
-        .feedback-incorrect { background: #fadbd8; color: #c0392b; border: 1px solid #e74c3c; }
-        .feedback-selfval { background: #fef9e7; color: #d35400; border: 1px solid #f39c12; }
-
-        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
-        .ai-loading { animation: pulse 1.5s infinite; color: #8e44ad; font-size: 18px; font-weight: bold; margin-bottom: 10px; }
-
-        @media (max-width: 600px) {
-            body { padding: 10px; }
-            .container { padding: 15px; border-radius: 8px; }
-            .main-header { flex-direction: column; align-items: stretch; gap: 15px; margin-bottom: 15px; }
-            h1 { font-size: 22px; justify-content: center; }
-            .global-search-btn { justify-content: center; padding: 12px; }
-            .tabs { flex-wrap: wrap; }
-            .tab-btn { flex: 1 1 25%; font-size: 13px; padding: 10px 2px; }
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border-color); padding: 15px; flex-direction: row; flex-wrap: wrap; justify-content: center; }
+            .sidebar-header { width: 100%; text-align: center; margin-bottom: 10px; display: flex; justify-content: center;}
+            .tab-btn { width: auto; flex: 1 1 calc(33% - 10px); justify-content: center; font-size: 13px; padding: 10px; }
+            .tab-btn span { display: none; } /* 모바일에서는 아이콘 숨기기 */
+            .main-content { padding: 20px; padding-top: 60px; }
+            .global-search-btn { top: 15px; right: 15px; padding: 8px 12px; font-size: 12px; }
             .modal-content { width: 95%; height: 90vh; margin: 5vh auto; }
-            .modal-scroll-area { padding: 15px; }
-            .modal-header { flex-direction: column; align-items: flex-start; gap: 10px; padding-right: 0; }
-            .modal-header > div { width: 100%; display: flex; flex-direction: column; gap: 5px; }
-            #modalFilter { width: 100%; }
-            .close-btn { top: 10px; right: 10px; width: 32px; height: 32px; font-size: 20px; }
-            .insert-row { flex-direction: column; align-items: stretch; gap: 8px; }
-            .insert-row > span { width: 100% !important; text-align: left !important; margin-bottom: 2px; }
-            .insert-row > input, .insert-row > button { width: 100% !important; margin: 0; }
-            #createTest > div, #fcSetupArea > div, #otSetupArea > div { flex-direction: column; gap: 8px; }
-            #createTest > div > select, #createTest > div > input, 
-            #fcSetupArea > div > select, #fcSetupArea > div > input,
-            #otSetupArea > div > select, #otSetupArea > div > input { width: 100% !important; margin: 0; }
-            .table-responsive-wrapper { overflow-x: auto; margin-top: 10px; }
-            .word-table { font-size: 13px; white-space: nowrap; }
-            .word-table th, .word-table td { padding: 8px 5px; }
-            .fc-container { height: 280px; }
-            .fc-face { font-size: 24px; padding: 15px; }
-            .fc-controls { flex-direction: row; gap: 10px; }
-            .fc-btn { padding: 12px; font-size: 14px; }
-            .test-question-text { font-size: 24px; }
+            .test-card { padding: 25px 15px; }
         }
     </style>
 </head>
@@ -147,328 +288,348 @@
 
 <!-- 전체 로딩 오버레이 -->
 <div id="aiLoadingOverlay" class="modal" style="display:none; align-items:center; justify-content:center; background-color: rgba(0,0,0,0.85); z-index: 9999;">
-    <div style="background:white; padding:40px; border-radius:12px; text-align:center; width: 85%; max-width: 450px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-        <div id="aiLoadingTitle" class="ai-loading">🤖 AI 맞춤형 예문 일괄 생성 중...</div>
-        <p id="aiLoadingText" style="margin-top:15px; font-size: 32px; font-weight:bold; color:#2c3e50;">0 / 0</p>
-        <p style="font-size:14px; color:#7f8c8d; margin-top: 10px; line-height: 1.5;">문제가 끊기지 않도록 처음 1회만 예문을 자동 생성합니다.<br>이후부터는 즉시 로딩됩니다.</p>
+    <div style="background:var(--card-bg); border: 1px solid var(--border-color); padding:40px; border-radius:20px; text-align:center; width: 85%; max-width: 450px; box-shadow: 0 10px 40px rgba(0,0,0,0.6);">
+        <div id="aiLoadingTitle" class="ai-loading"><span class="material-symbols-outlined">smart_toy</span> AI 맞춤형 예문 일괄 생성 중...</div>
+        <p id="aiLoadingText" style="margin-top:15px; font-size: 36px; font-weight:bold; color:var(--text-primary);">0 / 0</p>
+        <p style="font-size:14px; color:var(--text-secondary); margin-top: 15px; line-height: 1.6;">문제가 끊기지 않도록 처음 1회만 예문을 자동 생성합니다.<br>이후부터는 즉시 로딩됩니다.</p>
     </div>
 </div>
 
-<div class="container">
-    <div class="main-header">
-        <h1 id="mainTitle">단어장 & 학습지 생성기</h1>
-        <button class="global-search-btn" onclick="openGlobalSearch()">🔍 전체 검색</button>
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <h1 id="mainTitle"><span class="material-symbols-outlined" style="color:var(--accent-blue); font-size: 28px;">sparkles</span> 단어장 학습기</h1>
     </div>
     
-    <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('folders')">단어장</button>
-        <button class="tab-btn" onclick="switchTab('addWords')">단어 등록</button>
-        <button class="tab-btn" onclick="switchTab('flashcardTab')">플래시카드</button>
-        <button class="tab-btn" onclick="switchTab('onlineTestTab')">온라인 테스트</button>
-        <button class="tab-btn tab-today" onclick="switchTab('todayTab')">오늘의 학습 🚀</button>
-        <button class="tab-btn" onclick="switchTab('createTest')">학습지 생성</button>
-        <button class="tab-btn tab-setting" onclick="switchTab('settingsTab')">⚙️</button>
-    </div>
+    <button class="tab-btn active" onclick="switchTab('folders')">
+        <span class="material-symbols-outlined">folder</span> 내 단어장
+    </button>
+    <button class="tab-btn" onclick="switchTab('addWords')">
+        <span class="material-symbols-outlined">add_circle</span> 단어 일괄 등록
+    </button>
+    <button class="tab-btn" onclick="switchTab('flashcardTab')">
+        <span class="material-symbols-outlined">style</span> 스와이프 학습
+    </button>
+    <button class="tab-btn" onclick="switchTab('onlineTestTab')">
+        <span class="material-symbols-outlined">quiz</span> 온라인 테스트
+    </button>
+    <button class="tab-btn tab-today" onclick="switchTab('todayTab')">
+        <span class="material-symbols-outlined">rocket_launch</span> 스마트 복습
+    </button>
+    <button class="tab-btn" onclick="switchTab('createTest')">
+        <span class="material-symbols-outlined">description</span> 학습지(PDF)
+    </button>
+    <button class="tab-btn tab-setting" onclick="switchTab('settingsTab')" style="margin-top: auto;">
+        <span class="material-symbols-outlined">settings</span> 환경 설정
+    </button>
+</aside>
 
-    <!-- 1. 단어장 폴더 섹션 -->
-    <div id="folders" class="section active">
-        <h3>내 단어장 폴더</h3>
-        <button onclick="createFolder()" style="margin-bottom:15px; padding: 8px; border-radius: 6px; cursor: pointer;">+ 새 폴더 생성</button>
-        <div class="folder-grid" id="folderContainer"></div>
-    </div>
+<main class="main-content">
+    <button class="global-search-btn" onclick="openGlobalSearch()">
+        <span class="material-symbols-outlined">search</span> 전체 검색
+    </button>
 
-    <!-- 2. 단어 등록 섹션 -->
-    <div id="addWords" class="section">
-        <h3>단어 일괄 등록</h3>
-        <select id="folderSelect"><option value="">단어장을 선택하세요</option></select>
-        <textarea id="wordInput" rows="10" placeholder="영단어와 뜻을 입력하세요. (특정 번호에 넣으려면 '번호(탭)영단어(탭)뜻' 형식으로 입력)&#10;advent    도래, 출현&#10;500    stem from    ~에서 유래하다"></textarea>
-        <button class="action-btn" onclick="saveWords()">단어 등록하기</button>
-    </div>
-
-    <!-- ★ 환경 설정 섹션 (API Key 등록) ★ -->
-    <div id="settingsTab" class="section">
-        <h3>환경 설정 ⚙️</h3>
-        <div style="background: #f9f9f9; padding: 25px; border-radius: 8px; border: 1px solid #eee;">
-            <h4 style="margin-top: 0; color:#2c3e50;">🤖 AI 맞춤형 예문 기능 (Gemini 연동)</h4>
-            <p style="color:#555; font-size:14px; margin-bottom:15px; line-height:1.5;">
-                테스트 시 단어의 빈칸 예문을 생성하려면 구글의 <strong>Gemini API Key</strong>가 필요합니다. 무료로 발급받아 입력해 두면 자동으로 예문이 생성됩니다!
-            </p>
-            <input type="password" id="geminiApiKeyInput" placeholder="AI Studio에서 발급받은 API 키 입력 (AQ...)">
-            <button class="action-btn" style="margin-top: 10px; background:#8e44ad;" onclick="saveApiKey()">API 키 저장하기</button>
-            <div style="margin-top: 15px; font-size: 14px; font-weight:bold;">
-                👉 <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:#3498db; text-decoration: underline;">Gemini API Key 무료 발급받기 (클릭)</a>
-            </div>
-        </div>
-    </div>
-
-    <!-- 3. 플래시카드 섹션 -->
-    <div id="flashcardTab" class="section">
-        <h3>스와이프 플래시카드</h3>
-        <div id="fcSetupArea">
-            <select id="fcFolderSelect"><option value="">학습할 단어장을 선택하세요</option></select>
-            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                <input type="number" id="fcStartNum" placeholder="시작 번호 (선택)">
-                <input type="number" id="fcEndNum" placeholder="끝 번호 (선택)">
-            </div>
-            <select id="fcStatusFilter" style="margin-bottom: 10px;">
-                <option value="all">모든 단어 학습 (상태 무관)</option>
-                <option value="know">아는 단어(O)만 복습</option>
-                <option value="unk">헷갈리는 단어(X)만 집중 학습</option>
-                <option value="none">미분류 단어(-)만 처음 학습</option>
-            </select>
-            <select id="fcOrderSelect" style="margin-bottom: 10px;">
-                <option value="random">🔀 랜덤 순서로 학습</option>
-                <option value="sequential">🔢 번호 순서대로 학습</option>
-            </select>
-            <button class="action-btn" onclick="initFlashcards()">학습 시작하기</button>
+    <div class="container">
+        <!-- 1. 단어장 폴더 섹션 -->
+        <div id="folders" class="section active">
+            <h3>내 단어장 폴더</h3>
+            <button onclick="createFolder()" class="action-btn" style="width: auto; padding: 10px 16px; margin-bottom: 20px; font-size: 14px; display: inline-flex;"><span class="material-symbols-outlined" style="font-size:18px;">create_new_folder</span> 새 단어장 만들기</button>
+            <div class="folder-grid" id="folderContainer"></div>
         </div>
 
-        <div id="fcArea" class="fc-area" style="display: none;">
-            <p id="fcProgress" style="color: #7f8c8d; font-weight: bold; margin: 0 0 10px 0;"></p>
-            <div class="fc-container">
-                <div id="fcSwipeWrapper">
-                    <div id="fcCard" onclick="toggleFlip()">
-                        <div class="fc-face fc-front" id="fcFront"></div>
-                        <div class="fc-face fc-back" id="fcBack"></div>
+        <!-- 2. 단어 등록 섹션 -->
+        <div id="addWords" class="section">
+            <h3>단어 일괄 등록</h3>
+            <select id="folderSelect"><option value="">단어장을 선택하세요</option></select>
+            <textarea id="wordInput" rows="12" placeholder="영단어와 뜻을 입력하세요. (특정 번호에 넣으려면 '번호(탭)영단어(탭)뜻' 형식)&#10;advent    도래, 출현&#10;500    stem from    ~에서 유래하다"></textarea>
+            <button class="action-btn" onclick="saveWords()"><span class="material-symbols-outlined">upload</span> 단어 등록하기</button>
+        </div>
+
+        <!-- 3. 환경 설정 섹션 -->
+        <div id="settingsTab" class="section">
+            <h3>환경 설정</h3>
+            <div style="background: var(--card-bg); padding: 30px; border-radius: 16px; border: 1px solid var(--border-color);">
+                <h4 style="margin-top: 0; color:var(--text-primary); display:flex; align-items:center; gap:8px;"><span class="material-symbols-outlined" style="color:var(--accent-blue);">smart_toy</span> AI 맞춤형 예문 연동</h4>
+                <p style="color:var(--text-secondary); font-size:14px; margin-bottom:20px; line-height:1.6;">
+                    테스트 시 단어의 빈칸 예문을 생성하려면 구글의 <strong>Gemini API Key</strong>가 필요합니다. 무료로 발급받아 입력해 두면 자동으로 예문이 생성됩니다.
+                </p>
+                <input type="password" id="geminiApiKeyInput" placeholder="AI Studio에서 발급받은 API 키 입력 (AQ...)">
+                <button class="action-btn" style="margin-top: 15px; background: rgba(138,180,248,0.2); color: var(--accent-blue); border: 1px solid var(--accent-blue);" onclick="saveApiKey()">
+                    <span class="material-symbols-outlined">save</span> API 키 저장하기
+                </button>
+                <div style="margin-top: 20px; font-size: 14px;">
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--accent-blue); text-decoration: none; display:flex; align-items:center; gap:5px;"><span class="material-symbols-outlined" style="font-size:16px;">open_in_new</span> Gemini API Key 무료 발급받기</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. 플래시카드 섹션 -->
+        <div id="flashcardTab" class="section">
+            <h3>스와이프 플래시카드</h3>
+            <div id="fcSetupArea">
+                <select id="fcFolderSelect"><option value="">학습할 단어장을 선택하세요</option></select>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <input type="number" id="fcStartNum" placeholder="시작 번호 (선택)">
+                    <input type="number" id="fcEndNum" placeholder="끝 번호 (선택)">
+                </div>
+                <select id="fcStatusFilter" style="margin-bottom: 10px;">
+                    <option value="all">모든 단어 학습 (상태 무관)</option>
+                    <option value="know">아는 단어만 복습</option>
+                    <option value="unk">헷갈리는 단어만 집중 학습</option>
+                    <option value="none">미분류 단어만 처음 학습</option>
+                </select>
+                <select id="fcOrderSelect" style="margin-bottom: 10px;">
+                    <option value="random">랜덤 순서로 학습</option>
+                    <option value="sequential">번호 순서대로 학습</option>
+                </select>
+                <button class="action-btn" onclick="initFlashcards()"><span class="material-symbols-outlined">play_arrow</span> 학습 시작하기</button>
+            </div>
+
+            <div id="fcArea" class="fc-area" style="display: none;">
+                <p id="fcProgress" style="color: var(--text-secondary); font-weight: bold; margin: 0 0 10px 0;"></p>
+                <div class="fc-container">
+                    <div id="fcSwipeWrapper">
+                        <div id="fcCard" onclick="toggleFlip()">
+                            <div class="fc-face fc-front" id="fcFront"></div>
+                            <div class="fc-face fc-back" id="fcBack"></div>
+                        </div>
                     </div>
                 </div>
+                <p style="font-size: 13px; color: var(--text-secondary); margin: 20px 0; text-align: center; line-height: 1.6;">카드를 터치하거나 <b>스페이스바</b>를 누르면 뜻이 보입니다.<br>스와이프 또는 방향키(←, →)로도 조작 가능합니다.</p>
+                <div class="fc-controls">
+                    <button class="fc-btn fc-btn-no" onclick="animateSwipeAndNext('left')"><span class="material-symbols-outlined">close</span> 헷갈림</button>
+                    <button class="fc-btn fc-btn-yes" onclick="animateSwipeAndNext('right')"><span class="material-symbols-outlined">check</span> 알아요</button>
+                </div>
+                <button class="action-btn" style="margin-top: 25px; background: transparent; border: 1px solid var(--border-color); color: var(--text-primary);" onclick="quitFlashcards()">그만하기</button>
             </div>
-            <p style="font-size: 13px; color: #95a5a6; margin: 15px 0; text-align: center;">카드를 터치하거나 <b>스페이스바</b>를 누르면 뜻이 보입니다.<br>스와이프 또는 방향키(⬅️, ➡️)로도 조작 가능합니다.</p>
-            <div class="fc-controls">
-                <button class="fc-btn fc-btn-no" onclick="animateSwipeAndNext('left')">← 헷갈림 (X)</button>
-                <button class="fc-btn fc-btn-yes" onclick="animateSwipeAndNext('right')">알아요 (O) →</button>
+
+            <div id="fcResult" class="fc-result" style="display: none;">
+                <h2 style="margin-top:0; display:flex; align-items:center; justify-content:center; gap:10px;"><span class="material-symbols-outlined" style="color:var(--success-color);">task_alt</span> 학습 완료!</h2>
+                <div style="display: flex; gap: 15px; margin-bottom: 25px;">
+                    <div style="flex: 1; padding: 20px; background: var(--success-bg); border-radius: 12px; border: 1px solid rgba(129, 201, 149, 0.2);">
+                        <h3 style="color:var(--success-color); margin:0; font-size:15px;">아는 단어</h3>
+                        <p id="fcResKnowCount" style="font-size: 28px; font-weight: bold; margin: 10px 0 0 0; color:var(--success-color);">0</p>
+                    </div>
+                    <div style="flex: 1; padding: 20px; background: var(--danger-bg); border-radius: 12px; border: 1px solid rgba(242, 139, 130, 0.2);">
+                        <h3 style="color:var(--danger-color); margin:0; font-size:15px;">헷갈리는 단어</h3>
+                        <p id="fcResUnkCount" style="font-size: 28px; font-weight: bold; margin: 10px 0 0 0; color:var(--danger-color);">0</p>
+                    </div>
+                </div>
+                <div id="fcUnkList" style="text-align: left; margin-bottom: 25px;"></div>
+                <button class="action-btn" id="fcRetryBtn" style="margin-bottom: 10px; background: var(--warning-color);" onclick="retryUnknown()">헷갈리는 단어만 다시하기</button>
+                <button class="action-btn" style="background: var(--card-hover); color: var(--text-primary);" onclick="document.getElementById('fcResult').style.display='none'; document.getElementById('fcSetupArea').style.display='block';">종료하기</button>
             </div>
-            <button class="action-btn" style="margin-top: 20px; background:#e74c3c;" onclick="quitFlashcards()">그만하기</button>
         </div>
 
-        <div id="fcResult" class="fc-result" style="display: none;">
-            <h2 style="margin-top:0; color:#2c3e50;">학습 완료! 🎉</h2>
-            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                <div style="flex: 1; padding: 15px; background: #e8f8f5; border-radius: 8px;">
-                    <h3 style="color:#27ae60; margin:0;">아는 단어 (O)</h3>
-                    <p id="fcResKnowCount" style="font-size: 24px; font-weight: bold; margin: 5px 0 0 0;">0</p>
+        <!-- 5. 온라인 테스트 섹션 -->
+        <div id="onlineTestTab" class="section">
+            <h3>온라인 테스트</h3>
+            <div id="otSetupArea">
+                <select id="otFolderSelect"><option value="">단어장을 선택하세요</option></select>
+                
+                <div style="display: flex; gap: 10px;">
+                    <input type="number" id="otStartNum" placeholder="시작 번호 (예: 1)">
+                    <input type="number" id="otEndNum" placeholder="끝 번호 (예: 55)">
                 </div>
-                <div style="flex: 1; padding: 15px; background: #fdedec; border-radius: 8px;">
-                    <h3 style="color:#c0392b; margin:0;">헷갈리는 단어 (X)</h3>
-                    <p id="fcResUnkCount" style="font-size: 24px; font-weight: bold; margin: 5px 0 0 0;">0</p>
+                
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <select id="otStatusFilter" style="margin-top: 0; flex: 1;">
+                        <option value="all">모든 단어에서 출제</option>
+                        <option value="know">아는 단어 중에서만 출제</option>
+                        <option value="unk">헷갈리는 단어 중에서만 출제</option>
+                        <option value="none">미분류 단어 중에서만 출제</option>
+                    </select>
+                    <select id="otOverlapMode" style="margin-top: 0; flex: 1;">
+                        <option value="no_overlap">단어 중복 금지</option>
+                        <option value="overlap">유형 간 단어 중복 허용</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <input type="number" id="otEnToKoCount" placeholder="영->한 문제 수 (예: 5)">
+                    <input type="number" id="otKoToEnCount" placeholder="한->영 문제 수 (예: 5)">
+                </div>
+
+                <select id="otTestMode" style="margin-top: 15px; width: 100%; border: 1px solid var(--accent-blue); background: var(--accent-blue-bg); font-weight:bold;">
+                    <option value="ai">AI 예문 빈칸 테스트 (API키 필요)</option>
+                    <option value="general">일반 단어 테스트 (뜻 보고 영단어 맞추기)</option>
+                </select>
+                
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button class="action-btn" onclick="initOnlineTest()"><span class="material-symbols-outlined">edit_square</span> 테스트 시작하기</button>
+                    <button class="action-btn" style="background: var(--warning-color);" onclick="initOnlineTest(true)"><span class="material-symbols-outlined">format_list_bulleted</span> 모든 단어 출제</button>
                 </div>
             </div>
-            <div id="fcUnkList" style="text-align: left; margin-bottom: 20px;"></div>
-            <button class="action-btn" id="fcRetryBtn" style="margin-bottom: 10px; background: #f39c12;" onclick="retryUnknown()">이 중에서 헷갈리는 단어만 다시하기</button>
-            <button class="action-btn" onclick="document.getElementById('fcResult').style.display='none'; document.getElementById('fcSetupArea').style.display='block';">종료하기</button>
-        </div>
-    </div>
 
-    <!-- 4. 온라인 테스트 섹션 -->
-    <div id="onlineTestTab" class="section">
-        <h3>자체 온라인 테스트</h3>
-        <div id="otSetupArea">
-            <select id="otFolderSelect"><option value="">단어장을 선택하세요</option></select>
+            <div id="otArea" class="test-area" style="display: none;">
+                <p id="otProgress" style="color: var(--text-secondary); font-weight: bold; margin: 0 0 15px 0; font-size:16px;"></p>
+                
+                <div class="test-card">
+                    <div id="otQuestionType" class="test-question-type"></div>
+                    <div id="otQuestionText" class="test-question-text"></div>
+                    
+                    <input type="text" id="otAnswerInput" class="test-input" placeholder="정답을 입력하세요" autocomplete="off" onkeypress="handleOtKeyPress(event)">
+                    
+                    <button class="action-btn" id="otSubmitBtn" onclick="submitOtAnswer()">제출하기 (Enter)</button>
+
+                    <div id="otFeedbackArea" class="test-feedback"></div>
+                    
+                    <div id="otSelfEvalBtns" style="display: none; gap: 10px; margin-top: 20px;">
+                        <button class="fc-btn fc-btn-yes" onclick="processOtResult(true)"><span class="material-symbols-outlined">check</span> 맞음</button>
+                        <button class="fc-btn fc-btn-no" onclick="processOtResult(false)"><span class="material-symbols-outlined">close</span> 틀림</button>
+                    </div>
+
+                    <button class="action-btn" id="otNextBtn" style="display: none; margin-top: 20px;" onclick="nextOtQuestion()">다음 문제로 (Enter)</button>
+                </div>
+
+                <button class="action-btn" style="margin-top: 25px; background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); max-width: 500px;" onclick="quitOnlineTest()">시험 포기하기</button>
+            </div>
+
+            <div id="otResultArea" class="fc-result" style="display: none;">
+                <h2 style="margin-top:0; display:flex; align-items:center; justify-content:center; gap:10px;"><span class="material-symbols-outlined" style="color:var(--accent-blue);">assignment_turned_in</span> 테스트 종료!</h2>
+                <div style="display: flex; gap: 15px; margin-bottom: 25px;">
+                    <div style="flex: 1; padding: 20px; background: var(--success-bg); border-radius: 12px; border: 1px solid rgba(129, 201, 149, 0.2);">
+                        <h3 style="color:var(--success-color); margin:0; font-size:15px;">정답</h3>
+                        <p id="otResCorrect" style="font-size: 28px; font-weight: bold; margin: 10px 0 0 0; color:var(--success-color);">0</p>
+                    </div>
+                    <div style="flex: 1; padding: 20px; background: var(--danger-bg); border-radius: 12px; border: 1px solid rgba(242, 139, 130, 0.2);">
+                        <h3 style="color:var(--danger-color); margin:0; font-size:15px;">오답</h3>
+                        <p id="otResIncorrect" style="font-size: 28px; font-weight: bold; margin: 10px 0 0 0; color:var(--danger-color);">0</p>
+                    </div>
+                </div>
+                <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;">결과에 따라 스마트 복습 주기가 자동 업데이트 되었습니다.</p>
+                <button class="action-btn" onclick="finishOnlineTest()">설정으로 돌아가기</button>
+            </div>
+        </div>
+
+        <!-- 6. 오늘의 학습 (스마트 복습) 섹션 -->
+        <div id="todayTab" class="section">
+            <h3>스마트 복습</h3>
             
+            <div id="tdSetupArea" style="text-align: center; padding: 50px 30px; background: var(--card-bg); border-radius: 16px; border: 1px solid var(--border-color);">
+                <span class="material-symbols-outlined" style="font-size: 48px; color: var(--warning-color); margin-bottom:15px;">update</span>
+                <h2 style="color: var(--text-primary); margin-top: 0; margin-bottom: 10px;">망각 곡선 기반 복습</h2>
+                <p style="color: var(--text-secondary); font-size: 15px; margin-bottom: 30px; line-height:1.6;">
+                    복습 타이밍이 된 단어들을 모아 보여줍니다.<br>
+                    <span style="font-size: 13px; opacity:0.8;">(틀리면 5분 뒤, 맞히면 1일 → 3일 → 7일... 연장)</span>
+                </p>
+                
+                <div style="font-size: 18px; margin-bottom: 30px; color: var(--text-primary);">
+                    현재 복습해야 할 단어: <br><strong id="tdDueCount" style="font-size: 56px; color: var(--danger-color); line-height: 1.2;">0</strong> <span style="font-size:16px;">개</span>
+                </div>
+
+                <select id="tdTestMode" style="margin: 0 auto 20px auto; display: block; width: 100%; max-width: 350px; background: var(--warning-bg); border: 1px solid rgba(253, 214, 99, 0.3); color: var(--text-primary);">
+                    <option value="ai">AI 예문 빈칸 테스트</option>
+                    <option value="general">일반 단어 테스트 (뜻 보고 맞추기)</option>
+                </select>
+                
+                <button class="action-btn" id="tdStartBtn" onclick="initTodayTest()" style="max-width: 350px; margin: 0 auto; padding: 16px; font-size:16px;"><span class="material-symbols-outlined">rocket_launch</span> 학습 시작하기</button>
+            </div>
+
+            <div id="tdArea" class="test-area" style="display: none;">
+                <p id="tdProgress" style="color: var(--text-secondary); font-weight: bold; margin: 0 0 15px 0; font-size:16px;"></p>
+                <div class="test-card">
+                    <div id="tdQuestionType" class="test-question-type"></div>
+                    <div id="tdQuestionText" class="test-question-text"></div>
+                    <input type="text" id="tdAnswerInput" class="test-input" placeholder="정답을 입력하세요" autocomplete="off" onkeypress="handleTdKeyPress(event)">
+                    <button class="action-btn" id="tdSubmitBtn" onclick="submitTdAnswer()">제출하기 (Enter)</button>
+                    <div id="tdFeedbackArea" class="test-feedback"></div>
+                    <div id="tdSelfEvalBtns" style="display: none; gap: 10px; margin-top: 20px;">
+                        <button class="fc-btn fc-btn-yes" onclick="processTdResult(true)"><span class="material-symbols-outlined">check</span> 맞음</button>
+                        <button class="fc-btn fc-btn-no" onclick="processTdResult(false)"><span class="material-symbols-outlined">close</span> 틀림</button>
+                    </div>
+                    <button class="action-btn" id="tdNextBtn" style="display: none; margin-top: 20px;" onclick="nextTdQuestion()">다음 문제로 (Enter)</button>
+                </div>
+                <button class="action-btn" style="margin-top: 25px; background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); max-width: 500px;" onclick="quitTodayTest()">그만하기</button>
+            </div>
+
+            <div id="tdResultArea" class="fc-result" style="display: none;">
+                <h2 style="margin-top:0; display:flex; align-items:center; justify-content:center; gap:10px;"><span class="material-symbols-outlined" style="color:var(--success-color);">verified</span> 오늘의 학습 완료!</h2>
+                <p style="color: var(--text-secondary); font-size: 15px; margin-top:15px;">수고하셨습니다! 틀린 단어는 5분 뒤에 다시 나타납니다.</p>
+                <button class="action-btn" style="margin-top: 25px;" onclick="finishTodayTest()">메인으로 돌아가기</button>
+            </div>
+        </div>
+
+        <!-- 7. 학습지 생성 섹션 -->
+        <div id="createTest" class="section">
+            <h3>학습지 (PDF) 생성 조건</h3>
+            <select id="testFolderSelect"><option value="">단어장을 선택하세요</option></select>
+            <input type="text" id="testCustomTitle" placeholder="학습지 제목 (입력하지 않으면 자동 생성됩니다)">
+
             <div style="display: flex; gap: 10px;">
-                <input type="number" id="otStartNum" placeholder="시작 번호 (예: 1)">
-                <input type="number" id="otEndNum" placeholder="끝 번호 (예: 55)">
+                <input type="number" id="startNum" placeholder="시작 번호 (예: 1)">
+                <input type="number" id="endNum" placeholder="끝 번호 (예: 55)">
             </div>
             
             <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                <select id="otStatusFilter" style="margin-top: 0; flex: 1;">
-                    <option value="all">모든 단어에서 출제 (상태 무관)</option>
-                    <option value="know">아는 단어(O) 중에서만 출제</option>
-                    <option value="unk">헷갈리는 단어(X) 중에서만 출제</option>
-                    <option value="none">미분류 단어(-) 중에서만 출제</option>
+                <select id="testStatusFilter" style="margin-top: 0; flex: 1;">
+                    <option value="all">모든 단어에서 출제</option>
+                    <option value="know">아는 단어 중에서만 출제</option>
+                    <option value="unk">헷갈리는 단어 중에서만 출제</option>
+                    <option value="none">미분류 단어 중에서만 출제</option>
                 </select>
-                <select id="otOverlapMode" style="margin-top: 0; flex: 1;">
+                
+                <select id="testOverlapMode" style="margin-top: 0; flex: 1;">
                     <option value="no_overlap">단어 중복 금지</option>
                     <option value="overlap">유형 간 단어 중복 허용</option>
                 </select>
             </div>
 
             <div style="display: flex; gap: 10px;">
-                <input type="number" id="otEnToKoCount" placeholder="영->한 문제 수 (예: 5)">
-                <input type="number" id="otKoToEnCount" placeholder="한->영 문제 수 (예: 5)">
+                <input type="number" id="enToKoCount" placeholder="영->한 문제 수 (예: 5)">
+                <input type="number" id="koToEnCount" placeholder="한->영 문제 수 (예: 5)">
             </div>
-
-            <!-- ★ 추가된 옵션: AI 예문 테스트 vs 일반 단어 테스트 선택 ★ -->
-            <select id="otTestMode" style="margin-top: 10px; width: 100%; border: 2px solid #3498db; font-weight:bold;">
-                <option value="ai">✨ 한→영: AI 예문 빈칸 테스트 (API키 필요)</option>
-                <option value="general">📝 한→영: 일반 단어 테스트 (뜻 보고 영단어 맞추기)</option>
-            </select>
             
-            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                <button class="action-btn" onclick="initOnlineTest()">테스트 시작하기</button>
-                <button class="action-btn" style="background: #f39c12;" onclick="initOnlineTest(true)">모든 단어 출제</button>
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button class="action-btn" onclick="generateTest()"><span class="material-symbols-outlined">receipt_long</span> 학습지 만들기</button>
+                <button class="action-btn" style="background: var(--warning-color);" onclick="generateTest(true)"><span class="material-symbols-outlined">format_list_bulleted</span> 모든 단어 출제</button>
             </div>
-        </div>
-
-        <div id="otArea" class="test-area" style="display: none;">
-            <p id="otProgress" style="color: #7f8c8d; font-weight: bold; margin: 0 0 10px 0; font-size:18px;"></p>
-            
-            <div class="test-card">
-                <div id="otQuestionType" class="test-question-type"></div>
-                <div id="otQuestionText" class="test-question-text"></div>
-                
-                <input type="text" id="otAnswerInput" class="test-input" placeholder="정답을 입력하세요" autocomplete="off" onkeypress="handleOtKeyPress(event)">
-                
-                <button class="action-btn" id="otSubmitBtn" onclick="submitOtAnswer()">제출하기 (Enter)</button>
-
-                <div id="otFeedbackArea" class="test-feedback"></div>
-                
-                <div id="otSelfEvalBtns" style="display: none; gap: 10px; margin-top: 15px;">
-                    <button class="fc-btn fc-btn-yes" onclick="processOtResult(true)">맞음 (O)</button>
-                    <button class="fc-btn fc-btn-no" onclick="processOtResult(false)">틀림 (X)</button>
-                </div>
-
-                <button class="action-btn" id="otNextBtn" style="display: none; margin-top: 15px; background: #3498db;" onclick="nextOtQuestion()">다음 문제로 (Enter)</button>
+            <div style="margin-top: 15px;">
+                <button class="action-btn" id="printBtn" style="display: none; background: rgba(242, 139, 130, 0.15); color: var(--danger-color); border: 1px solid rgba(242, 139, 130, 0.3);" onclick="downloadPDF()"><span class="material-symbols-outlined">download</span> PDF 파일로 다운로드</button>
             </div>
 
-            <button class="action-btn" style="margin-top: 20px; background:#e74c3c; max-width: 400px;" onclick="quitOnlineTest()">시험 포기하기</button>
-        </div>
-
-        <div id="otResultArea" class="fc-result" style="display: none;">
-            <h2 style="margin-top:0; color:#2c3e50;">테스트 종료! 📝</h2>
-            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                <div style="flex: 1; padding: 15px; background: #e8f8f5; border-radius: 8px;">
-                    <h3 style="color:#27ae60; margin:0;">정답 (O)</h3>
-                    <p id="otResCorrect" style="font-size: 24px; font-weight: bold; margin: 5px 0 0 0;">0</p>
-                </div>
-                <div style="flex: 1; padding: 15px; background: #fdedec; border-radius: 8px;">
-                    <h3 style="color:#c0392b; margin:0;">오답 (X)</h3>
-                    <p id="otResIncorrect" style="font-size: 24px; font-weight: bold; margin: 5px 0 0 0;">0</p>
-                </div>
-            </div>
-            <p style="color: #7f8c8d; font-size: 14px; margin-bottom: 10px;">결과에 따라 스마트 복습 주기가 자동 업데이트 되었습니다.</p>
-            <button class="action-btn" onclick="finishOnlineTest()">설정으로 돌아가기</button>
+            <div id="worksheetOutput" class="worksheet-output"></div>
         </div>
     </div>
-
-    <!-- 5. 오늘의 학습 (스마트 복습) 섹션 -->
-    <div id="todayTab" class="section">
-        <h3>오늘의 학습 (스마트 복습)</h3>
-        
-        <div id="tdSetupArea" style="text-align: center; padding: 40px 20px; background: white; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-            <h2 style="color: #2c3e50; margin-bottom: 10px;">망각 곡선 기반 복습</h2>
-            <p style="color: #7f8c8d; font-size: 16px; margin-bottom: 30px;">
-                복습 타이밍이 된 단어들을 모아 보여줍니다.<br>
-                <span style="font-size: 13px;">(틀리면 5분 뒤, 맞히면 1일 → 3일 → 7일... 연장)</span>
-            </p>
-            
-            <div style="font-size: 20px; margin-bottom: 20px;">
-                현재 복습해야 할 단어: <br><strong id="tdDueCount" style="font-size: 48px; color: #e74c3c;">0</strong> 개
-            </div>
-
-            <!-- ★ 추가된 옵션: AI 예문 테스트 vs 일반 단어 테스트 선택 ★ -->
-            <select id="tdTestMode" style="margin: 0 auto 20px auto; display: block; width: 100%; max-width: 300px; padding: 10px; border-radius: 6px; font-size: 15px; border: 2px solid #f39c12; font-weight:bold;">
-                <option value="ai">✨ AI 예문 빈칸 테스트</option>
-                <option value="general">📝 일반 단어 테스트 (뜻 보고 맞추기)</option>
-            </select>
-            
-            <button class="action-btn" id="tdStartBtn" onclick="initTodayTest()" style="max-width: 300px; font-size: 18px; padding: 15px;">오늘의 학습 시작하기</button>
-        </div>
-
-        <div id="tdArea" class="test-area" style="display: none;">
-            <p id="tdProgress" style="color: #7f8c8d; font-weight: bold; margin: 0 0 10px 0; font-size:18px;"></p>
-            <div class="test-card">
-                <div id="tdQuestionType" class="test-question-type"></div>
-                <div id="tdQuestionText" class="test-question-text"></div>
-                <input type="text" id="tdAnswerInput" class="test-input" placeholder="정답을 입력하세요" autocomplete="off" onkeypress="handleTdKeyPress(event)">
-                <button class="action-btn" id="tdSubmitBtn" onclick="submitTdAnswer()">제출하기 (Enter)</button>
-                <div id="tdFeedbackArea" class="test-feedback"></div>
-                <div id="tdSelfEvalBtns" style="display: none; gap: 10px; margin-top: 15px;">
-                    <button class="fc-btn fc-btn-yes" onclick="processTdResult(true)">맞음 (O)</button>
-                    <button class="fc-btn fc-btn-no" onclick="processTdResult(false)">틀림 (X)</button>
-                </div>
-                <button class="action-btn" id="tdNextBtn" style="display: none; margin-top: 15px; background: #3498db;" onclick="nextTdQuestion()">다음 문제로 (Enter)</button>
-            </div>
-            <button class="action-btn" style="margin-top: 20px; background:#e74c3c; max-width: 400px;" onclick="quitTodayTest()">그만하기</button>
-        </div>
-
-        <div id="tdResultArea" class="fc-result" style="display: none;">
-            <h2 style="margin-top:0; color:#2c3e50;">오늘의 학습 완료! 🚀</h2>
-            <p style="color: #7f8c8d; font-size: 16px;">수고하셨습니다! 틀린 단어는 5분 뒤에 다시 나타납니다.</p>
-            <button class="action-btn" style="margin-top: 20px;" onclick="finishTodayTest()">메인으로 돌아가기</button>
-        </div>
-    </div>
-
-    <!-- 6. 학습지 생성 섹션 -->
-    <div id="createTest" class="section">
-        <h3>학습지 (PDF) 생성 조건</h3>
-        <select id="testFolderSelect"><option value="">단어장을 선택하세요</option></select>
-        <input type="text" id="testCustomTitle" placeholder="학습지 제목 (입력하지 않으면 자동 생성됩니다)">
-
-        <div style="display: flex; gap: 10px;">
-            <input type="number" id="startNum" placeholder="시작 번호 (예: 1)">
-            <input type="number" id="endNum" placeholder="끝 번호 (예: 55)">
-        </div>
-        
-        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-            <select id="testStatusFilter" style="margin-top: 0; flex: 1;">
-                <option value="all">모든 단어에서 출제 (상태 무관)</option>
-                <option value="know">아는 단어(O) 중에서만 출제</option>
-                <option value="unk">헷갈리는 단어(X) 중에서만 출제</option>
-                <option value="none">미분류 단어(-) 중에서만 출제</option>
-            </select>
-            
-            <select id="testOverlapMode" style="margin-top: 0; flex: 1;">
-                <option value="no_overlap">단어 중복 금지 (총 문제수 제한)</option>
-                <option value="overlap">유형 간 단어 중복 허용</option>
-            </select>
-        </div>
-
-        <div style="display: flex; gap: 10px;">
-            <input type="number" id="enToKoCount" placeholder="영->한 문제 수 (예: 5)">
-            <input type="number" id="koToEnCount" placeholder="한->영 문제 수 (예: 5)">
-        </div>
-        
-        <div style="display: flex; gap: 10px; margin-top: 10px;">
-            <button class="action-btn" onclick="generateTest()">학습지 만들기</button>
-            <button class="action-btn" style="background: #f39c12;" onclick="generateTest(true)">모든 단어 출제</button>
-        </div>
-        <div style="margin-top: 10px;">
-            <button class="action-btn" id="printBtn" style="display: none; background: #e74c3c;" onclick="downloadPDF()">PDF 파일로 다운로드</button>
-        </div>
-
-        <div id="worksheetOutput" class="worksheet-output"></div>
-    </div>
-</div>
+</main>
 
 <!-- 개별 단어장 폴더 모달 -->
 <div id="folderModal" class="modal">
     <div class="modal-content">
-        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <span class="close-btn" onclick="closeModal()"><span class="material-symbols-outlined">close</span></span>
         <div class="modal-scroll-area">
             <div class="modal-header">
                 <div style="display: flex; align-items: center; gap: 15px;">
-                    <h2 id="modalTitle" style="margin: 0; color: #2c3e50;">폴더 이름</h2>
-                    <select id="modalFilter" onchange="renderWordList(currentFolder)" style="width: auto; padding: 6px; margin: 0; border-radius: 4px; font-size: 14px;">
+                    <h2 id="modalTitle" style="margin: 0; color: var(--text-primary);">폴더 이름</h2>
+                    <select id="modalFilter" onchange="renderWordList(currentFolder)" style="width: auto; padding: 8px 12px; margin: 0; font-size: 13px;">
                         <option value="all">전체 보기</option>
-                        <option value="know">아는 단어만 (O)</option>
-                        <option value="unk">헷갈리는 단어만 (X)</option>
-                        <option value="none">미분류 단어만 (-)</option>
+                        <option value="know">아는 단어만</option>
+                        <option value="unk">헷갈리는 단어만</option>
+                        <option value="none">미분류 단어만</option>
                     </select>
                 </div>
-                <div style="display:flex; gap: 5px;">
-                    <button class="btn-small btn-edit" style="flex:1;" onclick="editFolderName()">이름 수정</button>
-                    <button class="btn-small btn-delete" style="flex:1;" onclick="deleteFolder()">폴더 삭제</button>
+                <div style="display:flex; gap: 8px;">
+                    <button class="btn-small btn-edit" style="flex:1; padding:10px 15px;" onclick="editFolderName()">이름 수정</button>
+                    <button class="btn-small btn-delete" style="flex:1; padding:10px 15px;" onclick="deleteFolder()">폴더 삭제</button>
                 </div>
             </div>
 
             <div class="insert-row bg-add">
-                <span style="font-size: 13px; font-weight: bold; color: #f39c12; width: 12%; text-align: center;">단어 삽입</span>
-                <input type="number" id="insertId" placeholder="번호(선택)" style="width: 15%;">
-                <input type="text" id="insertEn" placeholder="영단어 입력" style="width: 30%;">
-                <input type="text" id="insertKo" placeholder="뜻 입력" style="width: 30%;">
-                <button class="btn-small btn-save" onclick="insertWord()" style="width: 13%; padding: 8px;">추가</button>
+                <span style="font-size: 13px; font-weight: bold; color: var(--warning-color); width: 12%; text-align: center;">단어 삽입</span>
+                <input type="number" id="insertId" placeholder="번호(선택)" style="width: 15%; background:rgba(0,0,0,0.2);">
+                <input type="text" id="insertEn" placeholder="영단어 입력" style="width: 30%; background:rgba(0,0,0,0.2);">
+                <input type="text" id="insertKo" placeholder="뜻 입력" style="width: 30%; background:rgba(0,0,0,0.2);">
+                <button class="btn-small btn-save" onclick="insertWord()" style="width: 13%; padding: 10px;">추가</button>
             </div>
 
             <div class="insert-row bg-del">
-                <span style="font-size: 13px; font-weight: bold; color: #c0392b; width: 12%; text-align: center;">구간 삭제</span>
-                <input type="number" id="delStartId" placeholder="시작 번호" style="width: 35%;">
-                <span style="font-weight: bold; color: #555;">~</span>
-                <input type="number" id="delEndId" placeholder="끝 번호" style="width: 35%;">
-                <button class="btn-small btn-delete" onclick="bulkDeleteWords()" style="width: 13%; padding: 8px;">일괄 삭제</button>
+                <span style="font-size: 13px; font-weight: bold; color: var(--danger-color); width: 12%; text-align: center;">구간 삭제</span>
+                <input type="number" id="delStartId" placeholder="시작 번호" style="width: 35%; background:rgba(0,0,0,0.2);">
+                <span style="font-weight: bold; color: var(--text-secondary);">~</span>
+                <input type="number" id="delEndId" placeholder="끝 번호" style="width: 35%; background:rgba(0,0,0,0.2);">
+                <button class="btn-small btn-delete" onclick="bulkDeleteWords()" style="width: 13%; padding: 10px;">일괄 삭제</button>
             </div>
 
-            <input type="text" id="localSearchInput" placeholder="🔍 이 단어장 내에서 단어 검색 (예: ad)" style="margin: 15px 0; padding: 12px; font-size: 15px;" onkeyup="renderWordList(currentFolder)">
+            <input type="text" id="localSearchInput" placeholder="이 단어장 내에서 단어 검색 (예: ad)" style="margin: 20px 0; padding: 14px; font-size: 14px; background:var(--bg-color);" onkeyup="renderWordList(currentFolder)">
 
             <div class="table-responsive-wrapper">
                 <div id="wordListContainer"></div>
@@ -480,14 +641,14 @@
 <!-- 전역 검색 모달 -->
 <div id="globalSearchModal" class="modal">
     <div class="modal-content">
-        <span class="close-btn" onclick="closeGlobalSearch()">&times;</span>
+        <span class="close-btn" onclick="closeGlobalSearch()"><span class="material-symbols-outlined">close</span></span>
         <div class="modal-scroll-area">
-            <h2 style="margin-top: 0; color: #2c3e50;">🔍 전체 단어 검색</h2>
-            <input type="text" id="globalSearchInput" placeholder="모든 단어장을 통틀어 단어 검색 (예: ad)" style="margin-bottom: 15px; padding: 15px; font-size: 16px; border-radius: 8px; border: 2px solid #3498db;" onkeyup="executeGlobalSearch()">
+            <h2 style="margin-top: 0; color: var(--text-primary); display:flex; align-items:center; gap:8px;"><span class="material-symbols-outlined">search</span> 전체 단어 검색</h2>
+            <input type="text" id="globalSearchInput" placeholder="모든 단어장을 통틀어 단어 검색 (예: ad)" style="margin-bottom: 20px; padding: 16px; font-size: 15px; border-color: var(--accent-blue); background: var(--bg-color);" onkeyup="executeGlobalSearch()">
             
             <div class="table-responsive-wrapper">
                 <div id="globalSearchResultContainer">
-                    <p style="text-align:center; color:#888;">검색어를 입력하면 결과가 나타납니다.</p>
+                    <p style="text-align:center; color:var(--text-secondary); margin-top:40px;">검색어를 입력하면 결과가 나타납니다.</p>
                 </div>
             </div>
         </div>
@@ -496,12 +657,11 @@
 
 <script>
     // ----------------- 환경 설정 ----------------- //
-    // ★ 앱스 스크립트 재배포 후 새로운 URL로 변경해 주세요 ★
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKNe_iUIK3_arpOFfd5v5ewY_-OzBp5RYJ5Lm_xqaa2bOwWPsUPyy6vVsWYeTOkYM1/exec'; 
     let db = {};
     let currentFolder = ''; 
 
-    // ★ TTS (음성 읽어주기) 함수 ★
+    // TTS
     function speakWord(text) {
         if (!window.speechSynthesis) return; 
         window.speechSynthesis.cancel(); 
@@ -511,7 +671,7 @@
         window.speechSynthesis.speak(utterance);
     }
 
-    // ★ 유의어 판별 함수 (AI 유의어 지원 추가) ★
+    // 유의어 판별
     function checkSynonym(userAnsLower, q) {
         if (q.aiData && q.aiData.synonyms && Array.isArray(q.aiData.synonyms)) {
             const isAiSynonym = q.aiData.synonyms.some(syn => syn.toLowerCase() === userAnsLower);
@@ -531,19 +691,16 @@
         return false;
     }
 
-    // ★ 영구 캐싱 로직이 결합된 AI 예문 일괄 생성 함수 ★
+    // AI 예문 생성
     async function prepareAiDataBatch(questions, apiKey, progressCallback) {
-        // 1. 이미 구글 시트/로컬에 캐싱(저장)된 예문 데이터가 있다면 API 호출 제외
         const koToEnQs = questions.filter(q => q.type === 'koToEn' && !q.wordRef.aiData);
         
-        // 캐싱된 데이터를 화면에 보여줄 질문 큐(Queue)에 즉시 연결
         questions.forEach(q => {
             if (q.type === 'koToEn' && q.wordRef.aiData) {
                 q.aiData = q.wordRef.aiData;
             }
         });
 
-        // 모든 단어에 예문이 이미 존재하면 바로 테스트 시작
         if (koToEnQs.length === 0) {
             progressCallback(100, 100);
             return;
@@ -556,7 +713,6 @@
             return { id: idx, word: q.wordRef.en, meaning: q.wordRef.ko };
         });
 
-        // 가장 안정적이고 무료 한도가 높은 gemini-3.1-flash-lite 모델 사용
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`;
         const promptText = `Create English sentences with a blank for the given words.
 Rules:
@@ -582,14 +738,14 @@ ${JSON.stringify(wordList)}`;
                 const errData = await res.json().catch(() => ({}));
                 const errMsg = errData.error && errData.error.message ? errData.error.message : "HTTP 에러 (상태코드: " + res.status + ")";
                 console.error("API 응답 에러:", errData);
-                alert(`🚨 AI 예문 생성 실패!\n\n사유: ${errMsg}\n\n확인을 누르면 일반 테스트 모드(기본 뜻 표시)로 진행합니다.`);
+                alert(`AI 예문 생성 실패!\n\n사유: ${errMsg}\n\n확인을 누르면 일반 테스트 모드로 진행합니다.`);
                 return; 
             }
 
             const data = await res.json();
             if(data.error) {
                 const errMsg = data.error.message || "알 수 없는 에러";
-                alert(`🚨 AI 생성 거부!\n\n사유: ${errMsg}`);
+                alert(`AI 생성 거부!\n\n사유: ${errMsg}`);
                 return;
             }
             
@@ -606,18 +762,16 @@ ${JSON.stringify(wordList)}`;
             parsed.forEach(p => {
                 const match = koToEnQs.find(c => c.tempId === p.id);
                 if (match) {
-                    // ★ 2. 새로 생성된 AI 데이터를 wordRef 원본에 영구 저장 (캐싱)
                     match.wordRef.aiData = { en: p.en, ko: p.ko, synonyms: p.synonyms || [] };
                     match.aiData = match.wordRef.aiData;
                 }
             });
             
-            // ★ 3. 캐싱된 새 데이터를 구글 시트에 즉시 백업
             saveDB();
 
         } catch(e) {
             console.error("AI 배치 파싱 에러:", e);
-            alert(`🚨 AI 응답 처리 오류!\n\n일반 테스트 모드로 진행합니다.`);
+            alert(`AI 응답 처리 오류!\n\n일반 테스트 모드로 진행합니다.`);
         }
         
         const totalKoToEn = questions.filter(q => q.type === 'koToEn').length;
@@ -664,16 +818,16 @@ ${JSON.stringify(wordList)}`;
         if (!SCRIPT_URL) return;
 
         try {
-            document.getElementById('mainTitle').innerHTML = '단어장 & 학습지 생성기 <span style="font-size:14px; color:#7f8c8d; font-weight:normal;">(동기화 중...)</span>';
+            document.getElementById('mainTitle').innerHTML = '<span class="material-symbols-outlined" style="color:var(--accent-blue); font-size: 28px;">sparkles</span> 단어장 학습기 <span style="font-size:12px; color:var(--text-secondary); font-weight:normal; margin-left:8px;">(동기화 중...)</span>';
             const response = await fetch(SCRIPT_URL);
             const result = await response.json();
             if (!result.error) {
                 db = result; localStorage.setItem('vocabDB', JSON.stringify(db)); initUI();
             }
-            document.getElementById('mainTitle').innerText = '단어장 & 학습지 생성기'; 
+            document.getElementById('mainTitle').innerHTML = '<span class="material-symbols-outlined" style="color:var(--accent-blue); font-size: 28px;">sparkles</span> 단어장 학습기'; 
         } catch (error) {
             console.error('데이터 불러오기 실패.', error);
-            document.getElementById('mainTitle').innerText = '단어장 & 학습지 생성기'; 
+            document.getElementById('mainTitle').innerHTML = '<span class="material-symbols-outlined" style="color:var(--accent-blue); font-size: 28px;">sparkles</span> 단어장 학습기'; 
         }
     }
 
@@ -689,7 +843,6 @@ ${JSON.stringify(wordList)}`;
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify(db)
                 });
-                console.log("구글 시트 연동 완료");
             } catch (error) { console.error('네트워크 에러', error); }
         }, 3000); 
     }
@@ -700,7 +853,7 @@ ${JSON.stringify(wordList)}`;
         document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         document.getElementById(tabId).classList.add('active');
-        event.target.classList.add('active');
+        event.currentTarget.classList.add('active');
         if(tabId === 'todayTab') renderTodaySetup(); else initUI();
     }
 
@@ -729,7 +882,7 @@ ${JSON.stringify(wordList)}`;
         container.innerHTML = '';
         for (let folderName in db) {
             const div = document.createElement('div'); div.className = 'folder';
-            div.innerText = `${folderName}\n(${db[folderName].length}단어)`;
+            div.innerHTML = `<span class="material-symbols-outlined">folder_open</span> <div><strong style="font-size:16px;">${folderName}</strong><div style="font-size:13px; color:var(--text-secondary); margin-top:6px;">${db[folderName].length} 단어</div></div>`;
             div.onclick = () => openFolderDetail(folderName);
             container.appendChild(div);
         }
@@ -783,7 +936,7 @@ ${JSON.stringify(wordList)}`;
                         db[f].forEach(w => { 
                             if (w.en.toLowerCase() === en.toLowerCase()) {
                                 w.ko = ko;
-                                w.aiData = null; // ★ 뜻이 바뀌면 기존 예문 파기
+                                w.aiData = null; 
                             }
                         }); 
                     }
@@ -793,13 +946,12 @@ ${JSON.stringify(wordList)}`;
             let existingIdx = db[folder].findIndex(w => w.en.toLowerCase() === en.toLowerCase());
             if (existingIdx > -1) {
                 db[folder][existingIdx].ko = ko; 
-                db[folder][existingIdx].aiData = null; // ★ 뜻이 바뀌면 기존 예문 파기
+                db[folder][existingIdx].aiData = null; 
                 count++;
             } else {
                 let srsLevel = globalExisting ? (globalExisting.srsLevel || 0) : 0;
                 let nextReview = globalExisting ? (globalExisting.nextReview || 0) : 0;
                 let status = globalExisting ? (globalExisting.status || '') : '';
-                // 새 단어 등록 시 aiData는 null로 초기화
                 if (id !== null) {
                     const idx = db[folder].findIndex(w => w.id === id);
                     if (idx > -1) db[folder].forEach(w => { if (w.id >= id) w.id += 1; });
@@ -829,7 +981,7 @@ ${JSON.stringify(wordList)}`;
         const searchVal = document.getElementById('localSearchInput').value.trim().toLowerCase();
         let words = db[folderName];
         
-        if (!words || words.length === 0) return container.innerHTML = '<p style="text-align:center; color:#888;">등록된 단어가 없습니다.</p>';
+        if (!words || words.length === 0) return container.innerHTML = '<p style="text-align:center; color:var(--text-secondary); margin-top:20px;">등록된 단어가 없습니다.</p>';
 
         if (filterVal === 'know') words = words.filter(w => w.status === 'know');
         else if (filterVal === 'unk') words = words.filter(w => w.status === 'unk');
@@ -843,14 +995,14 @@ ${JSON.stringify(wordList)}`;
             });
         } else { words.sort((a, b) => a.id - b.id); }
 
-        if (words.length === 0) return container.innerHTML = '<p style="text-align:center; color:#888;">결과가 없습니다.</p>';
+        if (words.length === 0) return container.innerHTML = '<p style="text-align:center; color:var(--text-secondary); margin-top:20px;">결과가 없습니다.</p>';
 
         let html = '<table class="word-table"><tr><th width="12%">번호</th><th width="13%">상태</th><th width="30%">영단어</th><th width="30%">뜻</th><th width="15%">관리</th></tr>';
         words.forEach(w => {
-            let statusBadge = '<span class="status-badge status-none">- 미분류</span>';
-            if(w.status === 'know') statusBadge = '<span class="status-badge status-know">O 아는단어</span>';
-            if(w.status === 'unk') statusBadge = '<span class="status-badge status-unk">X 헷갈림</span>';
-            html += `<tr id="row-${w.id}"><td>${w.id}</td><td>${statusBadge}</td><td>${w.en}</td><td>${w.ko}</td>
+            let statusBadge = '<span class="status-badge status-none">미분류</span>';
+            if(w.status === 'know') statusBadge = '<span class="status-badge status-know">아는단어</span>';
+            if(w.status === 'unk') statusBadge = '<span class="status-badge status-unk">헷갈림</span>';
+            html += `<tr id="row-${w.id}"><td>${w.id}</td><td>${statusBadge}</td><td style="font-weight:bold;">${w.en}</td><td>${w.ko}</td>
                 <td><button class="btn-small btn-edit" onclick="editWord('${folderName}', ${w.id})">수정</button><button class="btn-small btn-delete" onclick="deleteWord('${folderName}', ${w.id})">삭제</button></td></tr>`;
         });
         html += '</table>'; container.innerHTML = html;
@@ -863,7 +1015,6 @@ ${JSON.stringify(wordList)}`;
         if (isNaN(newId)) newId = db[currentFolder].length > 0 ? Math.max(...db[currentFolder].map(w => w.id)) + 1 : 1;
         else { const exIdx = db[currentFolder].findIndex(w => w.id === newId); if(exIdx > -1) db[currentFolder].forEach(w => { if(w.id >= newId) w.id++; }); }
         
-        // 새 단어 등록 시 aiData: null 추가
         db[currentFolder].push({ id: newId, en: enVal.trim(), ko: koVal.trim(), status: '', srsLevel: 0, nextReview: 0, aiData: null });
         saveDB(); renderWordList(currentFolder);
         document.getElementById('insertId').value = ''; document.getElementById('insertEn').value = ''; document.getElementById('insertKo').value = '';
@@ -888,8 +1039,8 @@ ${JSON.stringify(wordList)}`;
 
     function editWord(folderName, id) {
         const row = document.getElementById(`row-${id}`); const word = db[folderName].find(w => w.id === id);
-        row.innerHTML = `<td>${word.id}</td><td>-</td><td><input type="text" id="edit-en-${id}" value="${word.en}"></td><td><input type="text" id="edit-ko-${id}" value="${word.ko}"></td>
-            <td><button class="btn-small btn-save" onclick="saveEdit('${folderName}', ${id})">저장</button><button class="btn-small" onclick="renderWordList('${folderName}')">취소</button></td>`;
+        row.innerHTML = `<td>${word.id}</td><td>-</td><td><input type="text" id="edit-en-${id}" value="${word.en}" style="padding:8px; margin:0;"></td><td><input type="text" id="edit-ko-${id}" value="${word.ko}" style="padding:8px; margin:0;"></td>
+            <td><button class="btn-small btn-save" onclick="saveEdit('${folderName}', ${id})">저장</button><button class="btn-small" onclick="renderWordList('${folderName}')" style="background:transparent; border:1px solid var(--border-color); color:var(--text-primary);">취소</button></td>`;
     }
 
     function saveEdit(folderName, id) {
@@ -899,22 +1050,22 @@ ${JSON.stringify(wordList)}`;
         if(index > -1) { 
             db[folderName][index].en = newEn; 
             db[folderName][index].ko = newKo; 
-            db[folderName][index].aiData = null; // ★ 수정 시 기존 예문 초기화
+            db[folderName][index].aiData = null; 
             saveDB(); renderWordList(folderName); 
         }
     }
 
     // 전역 검색
-    function openGlobalSearch() { document.getElementById('globalSearchModal').style.display = 'block'; document.getElementById('globalSearchInput').value = ''; document.getElementById('globalSearchInput').focus(); document.getElementById('globalSearchResultContainer').innerHTML = '<p style="text-align:center; color:#888;">검색어를 입력하면 결과가 나타납니다.</p>'; }
+    function openGlobalSearch() { document.getElementById('globalSearchModal').style.display = 'block'; document.getElementById('globalSearchInput').value = ''; document.getElementById('globalSearchInput').focus(); document.getElementById('globalSearchResultContainer').innerHTML = '<p style="text-align:center; color:var(--text-secondary); margin-top:40px;">검색어를 입력하면 결과가 나타납니다.</p>'; }
     function closeGlobalSearch() { document.getElementById('globalSearchModal').style.display = 'none'; renderFolders(); }
     function executeGlobalSearch() {
         const keyword = document.getElementById('globalSearchInput').value.trim().toLowerCase();
         const container = document.getElementById('globalSearchResultContainer');
-        if (!keyword) return container.innerHTML = '<p style="text-align:center; color:#888;">검색어를 입력하세요.</p>';
+        if (!keyword) return container.innerHTML = '<p style="text-align:center; color:var(--text-secondary); margin-top:40px;">검색어를 입력하세요.</p>';
 
         let results = [];
         for (let folder in db) { db[folder].forEach(w => { if (w.en.toLowerCase().includes(keyword) || w.ko.includes(keyword)) results.push({ folder: folder, ...w }); }); }
-        if (results.length === 0) return container.innerHTML = '<p style="text-align:center; color:#888;">검색 결과가 없습니다.</p>';
+        if (results.length === 0) return container.innerHTML = '<p style="text-align:center; color:var(--text-secondary); margin-top:40px;">검색 결과가 없습니다.</p>';
 
         results.sort((a, b) => {
             const aStarts = a.en.toLowerCase().startsWith(keyword); const bStarts = b.en.toLowerCase().startsWith(keyword);
@@ -924,10 +1075,10 @@ ${JSON.stringify(wordList)}`;
 
         let html = '<table class="word-table"><tr><th width="15%">단어장 이름</th><th width="10%">번호</th><th width="13%">상태</th><th width="23%">영단어</th><th width="24%">뜻</th><th width="15%">관리</th></tr>';
         results.forEach(w => {
-            let statusBadge = '<span class="status-badge status-none">- 미분류</span>';
-            if(w.status === 'know') statusBadge = '<span class="status-badge status-know">O</span>';
-            if(w.status === 'unk') statusBadge = '<span class="status-badge status-unk">X</span>';
-            html += `<tr id="g-row-${w.folder}-${w.id}"><td style="font-size:12px; color:#3498db; font-weight:bold;">${w.folder}</td><td>${w.id}</td><td>${statusBadge}</td><td>${w.en}</td><td>${w.ko}</td>
+            let statusBadge = '<span class="status-badge status-none">미분류</span>';
+            if(w.status === 'know') statusBadge = '<span class="status-badge status-know">아는단어</span>';
+            if(w.status === 'unk') statusBadge = '<span class="status-badge status-unk">헷갈림</span>';
+            html += `<tr id="g-row-${w.folder}-${w.id}"><td style="font-size:12px; color:var(--accent-blue); font-weight:bold;">${w.folder}</td><td>${w.id}</td><td>${statusBadge}</td><td style="font-weight:bold;">${w.en}</td><td>${w.ko}</td>
                 <td><button class="btn-small btn-edit" onclick="editWordGlobal('${w.folder}', ${w.id})">수정</button><button class="btn-small btn-delete" onclick="deleteWordGlobal('${w.folder}', ${w.id})">삭제</button></td></tr>`;
         });
         html += '</table>'; container.innerHTML = html;
@@ -935,8 +1086,8 @@ ${JSON.stringify(wordList)}`;
     function deleteWordGlobal(folderName, id) { if(confirm(`삭제?`)) { db[folderName] = db[folderName].filter(w => w.id !== id); db[folderName].forEach(w => { if (w.id > id) w.id -= 1; }); saveDB(); executeGlobalSearch(); } }
     function editWordGlobal(folderName, id) {
         const row = document.getElementById(`g-row-${folderName}-${id}`); const word = db[folderName].find(w => w.id === id);
-        row.innerHTML = `<td style="font-size:12px; color:#3498db; font-weight:bold;">${folderName}</td><td>${word.id}</td><td>-</td><td><input type="text" id="g-edit-en-${folderName}-${id}" value="${word.en}"></td><td><input type="text" id="g-edit-ko-${folderName}-${id}" value="${word.ko}"></td>
-            <td><button class="btn-small btn-save" onclick="saveEditGlobal('${folderName}', ${id})">저장</button><button class="btn-small" onclick="executeGlobalSearch()">취소</button></td>`;
+        row.innerHTML = `<td style="font-size:12px; color:var(--accent-blue); font-weight:bold;">${folderName}</td><td>${word.id}</td><td>-</td><td><input type="text" id="g-edit-en-${folderName}-${id}" value="${word.en}" style="padding:8px; margin:0;"></td><td><input type="text" id="g-edit-ko-${folderName}-${id}" value="${word.ko}" style="padding:8px; margin:0;"></td>
+            <td><button class="btn-small btn-save" onclick="saveEditGlobal('${folderName}', ${id})">저장</button><button class="btn-small" onclick="executeGlobalSearch()" style="background:transparent; border:1px solid var(--border-color); color:var(--text-primary);">취소</button></td>`;
     }
     function saveEditGlobal(folderName, id) {
         const newEn = document.getElementById(`g-edit-en-${folderName}-${id}`).value; const newKo = document.getElementById(`g-edit-ko-${folderName}-${id}`).value;
@@ -944,7 +1095,7 @@ ${JSON.stringify(wordList)}`;
         if(index > -1) { 
             db[folderName][index].en = newEn; 
             db[folderName][index].ko = newKo; 
-            db[folderName][index].aiData = null; // ★ 수정 시 기존 예문 초기화
+            db[folderName][index].aiData = null; 
             saveDB(); executeGlobalSearch(); 
         }
     }
@@ -981,7 +1132,7 @@ ${JSON.stringify(wordList)}`;
         saveDB(); 
     }
 
-    // ----------------- 플래시카드 로직 (TTS 적용) ----------------- //
+    // ----------------- 플래시카드 로직 ----------------- //
     let fcList = [], fcIndex = 0, fcKnown = [], fcUnknown = [];
     let fcIsDragging = false, fcStartX = 0, fcCurrentX = 0, fcDidDrag = false;
     const fcSwipeWrapper = document.getElementById('fcSwipeWrapper'), fcCard = document.getElementById('fcCard');
@@ -1009,7 +1160,7 @@ ${JSON.stringify(wordList)}`;
         document.getElementById('fcFront').innerText = cw.en; document.getElementById('fcBack').innerText = cw.ko;
         fcSwipeWrapper.style.transition = 'none'; fcSwipeWrapper.style.transform = `translateX(0px) rotateZ(0deg) scale(1)`; fcCard.style.transition = '';
         
-        speakWord(cw.en); // 카드 뜰 때 영단어 읽기
+        speakWord(cw.en); 
     }
     function toggleFlip() { 
         if(!fcDidDrag) {
@@ -1039,8 +1190,8 @@ ${JSON.stringify(wordList)}`;
         document.getElementById('fcResKnowCount').innerText = fcKnown.length; document.getElementById('fcResUnkCount').innerText = fcUnknown.length;
         const ul = document.getElementById('fcUnkList'); ul.innerHTML = '';
         if(fcUnknown.length > 0) {
-            let h = '<h4 style="color:#555;">다시 복습할 단어:</h4>'; fcUnknown.forEach(w => { h += `<div class="fc-word-pill unk">${w.en} : ${w.ko}</div>`; }); ul.innerHTML = h; document.getElementById('fcRetryBtn').style.display = 'inline-block';
-        } else { ul.innerHTML = '<p style="color:#27ae60; font-weight:bold;">모두 외웠습니다!</p>'; document.getElementById('fcRetryBtn').style.display = 'none'; }
+            let h = '<h4 style="color:var(--text-secondary);">다시 복습할 단어:</h4>'; fcUnknown.forEach(w => { h += `<div class="fc-word-pill unk">${w.en} : ${w.ko}</div>`; }); ul.innerHTML = h; document.getElementById('fcRetryBtn').style.display = 'inline-flex';
+        } else { ul.innerHTML = '<p style="color:var(--success-color); font-weight:bold;">모두 외웠습니다!</p>'; document.getElementById('fcRetryBtn').style.display = 'none'; }
     }
     function retryUnknown() { fcList = document.getElementById('fcOrderSelect').value === 'sequential' ? [...fcUnknown].sort((a,b)=>a.id-b.id) : [...fcUnknown].sort(()=>0.5-Math.random()); fcIndex = 0; fcKnown = []; fcUnknown = []; document.getElementById('fcResult').style.display = 'none'; document.getElementById('fcArea').style.display = 'flex'; renderFlashcard(); }
     function quitFlashcards() { if(window.speechSynthesis) window.speechSynthesis.cancel(); document.getElementById('fcArea').style.display = 'none'; document.getElementById('fcSetupArea').style.display = 'block'; saveDB(); }
@@ -1112,9 +1263,8 @@ ${JSON.stringify(wordList)}`;
             if (!apiKey) {
                 alert('API 키가 없습니다. 일반 테스트 모드로 진행합니다.');
             } else if (testQuestions.some(q => q.type === 'koToEn')) {
-                // ★ 캐싱 로직이 포함된 새로운 AI 함수 호출
                 document.getElementById('aiLoadingOverlay').style.display = 'flex';
-                document.getElementById('aiLoadingTitle').innerHTML = "🤖 AI 맞춤형 예문 로딩 중...";
+                document.getElementById('aiLoadingTitle').innerHTML = '<span class="material-symbols-outlined">smart_toy</span> AI 맞춤형 예문 로딩 중...';
                 await prepareAiDataBatch(testQuestions, apiKey, (current, total) => {
                     document.getElementById('aiLoadingText').innerText = `${current} / ${total}`;
                 });
@@ -1147,8 +1297,8 @@ ${JSON.stringify(wordList)}`;
         if (q.type === 'koToEn') {
             document.getElementById('otQuestionType').innerText = "빈칸에 들어갈 영단어를 적으세요";
             if (q.aiData) {
-                qtEl.innerHTML = `<div style="font-size:26px; color:#2c3e50; margin-bottom:10px; line-height:1.4;">${q.aiData.en}</div>
-                                  <div style="font-size:16px; color:#7f8c8d; font-weight:normal;">(${q.aiData.ko})</div>`;
+                qtEl.innerHTML = `<div style="font-size:28px; color:var(--text-primary); margin-bottom:12px; line-height:1.4;">${q.aiData.en}</div>
+                                  <div style="font-size:18px; color:var(--text-secondary); font-weight:normal;">(${q.aiData.ko})</div>`;
             } else {
                 document.getElementById('otQuestionType').innerText = "다음 뜻을 가진 영단어를 쓰세요";
                 qtEl.innerText = q.wordRef.ko; 
@@ -1160,7 +1310,7 @@ ${JSON.stringify(wordList)}`;
         }
 
         inputEl.disabled = false; inputEl.style.display = 'block'; inputEl.focus();
-        submitBtn.style.display = 'block';
+        submitBtn.style.display = 'flex';
     }
 
     function handleOtKeyPress(e) {
@@ -1184,30 +1334,30 @@ ${JSON.stringify(wordList)}`;
             if(userAnsLower === targetEn) {
                 inputEl.disabled = true; document.getElementById('otSubmitBtn').style.display = 'none'; fbArea.style.display = 'block';
                 fbArea.className = 'test-feedback feedback-correct';
-                fbArea.innerHTML = '✅ 정답입니다!';
+                fbArea.innerHTML = '<span class="material-symbols-outlined">check_circle</span> 정답입니다!';
                 updateSRS(q.wordRef, true); otStats.correct++;
                 speakWord(q.wordRef.en); 
-                document.getElementById('otNextBtn').style.display = 'block'; otIsWaitingForNext = true; document.getElementById('otNextBtn').focus();
+                document.getElementById('otNextBtn').style.display = 'flex'; otIsWaitingForNext = true; document.getElementById('otNextBtn').focus();
             } else {
                 if (checkSynonym(userAnsLower, q)) {
                     fbArea.style.display = 'block';
                     fbArea.className = 'test-feedback feedback-selfval';
-                    fbArea.innerHTML = `⚠️ <b>유의어입니다!</b> 문맥상 의도된 다른 단어를 입력해주세요.<br><span style="font-size:14px; color:#555;">(첫 글자 힌트: <b>${targetEn.charAt(0)}...</b>)</span>`;
+                    fbArea.innerHTML = `<span class="material-symbols-outlined">warning</span> <b>유의어입니다!</b> 문맥상 의도된 다른 단어를 입력해주세요.<br><span style="font-size:14px; color:var(--text-secondary); opacity:0.8;">(첫 글자 힌트: <b>${targetEn.charAt(0)}...</b>)</span>`;
                     inputEl.value = ''; inputEl.focus();
                     return; 
                 }
 
                 inputEl.disabled = true; document.getElementById('otSubmitBtn').style.display = 'none'; fbArea.style.display = 'block';
                 fbArea.className = 'test-feedback feedback-incorrect';
-                fbArea.innerHTML = `❌ 틀렸습니다!<br><span style="font-size:14px; color:#555;">정답:</span> ${q.wordRef.en}`;
+                fbArea.innerHTML = `<span class="material-symbols-outlined">cancel</span> 틀렸습니다!<br><span style="font-size:14px; color:var(--text-secondary); opacity:0.8;">정답:</span> ${q.wordRef.en}`;
                 updateSRS(q.wordRef, false); otStats.incorrect++;
-                document.getElementById('otNextBtn').style.display = 'block'; otIsWaitingForNext = true; document.getElementById('otNextBtn').focus();
+                document.getElementById('otNextBtn').style.display = 'flex'; otIsWaitingForNext = true; document.getElementById('otNextBtn').focus();
             }
         } else {
             inputEl.disabled = true; document.getElementById('otSubmitBtn').style.display = 'none'; fbArea.style.display = 'block';
             inputEl.style.display = 'none';
             fbArea.className = 'test-feedback feedback-selfval';
-            fbArea.innerHTML = `<span style="font-size:14px; color:#7f8c8d;">내 답안:</span> <b style="color:#e67e22;">${document.getElementById('otAnswerInput').value}</b><br><br><span style="font-size:14px; color:#7f8c8d;">실제 뜻:</span> <b>${q.wordRef.ko}</b>`;
+            fbArea.innerHTML = `<span style="font-size:14px; color:var(--text-secondary);">내 답안:</span> <b style="color:var(--warning-color);">${document.getElementById('otAnswerInput').value}</b><br><br><span style="font-size:14px; color:var(--text-secondary);">실제 뜻:</span> <b style="color:var(--text-primary);">${q.wordRef.ko}</b>`;
             document.getElementById('otSelfEvalBtns').style.display = 'flex';
         }
     }
@@ -1222,8 +1372,7 @@ ${JSON.stringify(wordList)}`;
     function quitOnlineTest() { if(confirm('포기하시겠습니까? 지금까지 푼 결과만 저장됩니다.')){ saveDB(); document.getElementById('otArea').style.display = 'none'; document.getElementById('otSetupArea').style.display = 'block'; } }
     function finishOnlineTest() { document.getElementById('otResultArea').style.display = 'none'; document.getElementById('otSetupArea').style.display = 'block'; }
 
-
-    // ----------------- 오늘의 학습 로직 (AI 예문 연동) ----------------- //
+    // ----------------- 오늘의 학습 로직 ----------------- //
     let tdQuestions = [];
     let currentTdIdx = 0;
     let tdStats = { correct: 0, incorrect: 0 };
@@ -1242,8 +1391,8 @@ ${JSON.stringify(wordList)}`;
         document.getElementById('tdDueCount').innerText = dueCount;
         const btn = document.getElementById('tdStartBtn');
         btn.disabled = (dueCount === 0);
-        if(dueCount === 0) { btn.style.background = '#bdc3c7'; btn.innerText = '오늘 복습할 단어가 없습니다 🎉'; } 
-        else { btn.style.background = '#2ecc71'; btn.innerText = '오늘의 학습 시작하기'; }
+        if(dueCount === 0) { btn.style.background = 'var(--border-color)'; btn.style.color = 'var(--text-secondary)'; btn.innerHTML = '<span class="material-symbols-outlined">celebration</span> 오늘 복습할 단어가 없습니다'; } 
+        else { btn.style.background = 'var(--accent-blue)'; btn.style.color = '#000'; btn.innerHTML = '<span class="material-symbols-outlined">rocket_launch</span> 오늘의 학습 시작하기'; }
     }
 
     async function initTodayTest() {
@@ -1271,9 +1420,8 @@ ${JSON.stringify(wordList)}`;
             if (!apiKey) {
                 alert('API 키가 없습니다. 일반 테스트 모드로 진행합니다.');
             } else if (tdQuestions.some(q => q.type === 'koToEn')) {
-                // ★ 캐싱 로직이 포함된 새로운 AI 함수 호출
                 document.getElementById('aiLoadingOverlay').style.display = 'flex';
-                document.getElementById('aiLoadingTitle').innerHTML = "🤖 AI 맞춤형 예문 로딩 중...";
+                document.getElementById('aiLoadingTitle').innerHTML = '<span class="material-symbols-outlined">smart_toy</span> AI 맞춤형 예문 로딩 중...';
                 await prepareAiDataBatch(tdQuestions, apiKey, (current, total) => {
                     document.getElementById('aiLoadingText').innerText = `${current} / ${total}`;
                 });
@@ -1306,8 +1454,8 @@ ${JSON.stringify(wordList)}`;
         if (q.type === 'koToEn') {
             document.getElementById('tdQuestionType').innerText = "빈칸에 들어갈 영단어를 적으세요";
             if (q.aiData) {
-                qtEl.innerHTML = `<div style="font-size:26px; color:#2c3e50; margin-bottom:10px; line-height:1.4;">${q.aiData.en}</div>
-                                  <div style="font-size:16px; color:#7f8c8d; font-weight:normal;">(${q.aiData.ko})</div>`;
+                qtEl.innerHTML = `<div style="font-size:28px; color:var(--text-primary); margin-bottom:12px; line-height:1.4;">${q.aiData.en}</div>
+                                  <div style="font-size:18px; color:var(--text-secondary); font-weight:normal;">(${q.aiData.ko})</div>`;
             } else {
                 document.getElementById('tdQuestionType').innerText = "다음 뜻을 가진 영단어를 적으세요";
                 qtEl.innerText = q.wordRef.ko; 
@@ -1319,7 +1467,7 @@ ${JSON.stringify(wordList)}`;
         }
 
         inputEl.disabled = false; inputEl.style.display = 'block'; inputEl.focus();
-        submitBtn.style.display = 'block';
+        submitBtn.style.display = 'flex';
     }
 
     function handleTdKeyPress(e) {
@@ -1342,29 +1490,29 @@ ${JSON.stringify(wordList)}`;
             
             if(userAnsLower === targetEn) {
                 inputEl.disabled = true; document.getElementById('tdSubmitBtn').style.display = 'none'; fbArea.style.display = 'block';
-                fbArea.className = 'test-feedback feedback-correct'; fbArea.innerHTML = '✅ 정답입니다! 복습 주기가 늘어납니다.';
+                fbArea.className = 'test-feedback feedback-correct'; fbArea.innerHTML = '<span class="material-symbols-outlined">check_circle</span> 정답입니다! 복습 주기가 늘어납니다.';
                 updateSRS(q.wordRef, true); tdStats.correct++;
                 speakWord(q.wordRef.en); 
-                document.getElementById('tdNextBtn').style.display = 'block'; tdIsWaitingForNext = true; document.getElementById('tdNextBtn').focus();
+                document.getElementById('tdNextBtn').style.display = 'flex'; tdIsWaitingForNext = true; document.getElementById('tdNextBtn').focus();
             } else {
                 if (checkSynonym(userAnsLower, q)) {
                     fbArea.style.display = 'block';
                     fbArea.className = 'test-feedback feedback-selfval';
-                    fbArea.innerHTML = `⚠️ <b>유의어입니다!</b> 문맥상 의도된 다른 단어를 입력해주세요.<br><span style="font-size:14px; color:#555;">(첫 글자 힌트: <b>${targetEn.charAt(0)}...</b>)</span>`;
+                    fbArea.innerHTML = `<span class="material-symbols-outlined">warning</span> <b>유의어입니다!</b> 문맥상 의도된 다른 단어를 입력해주세요.<br><span style="font-size:14px; color:var(--text-secondary); opacity:0.8;">(첫 글자 힌트: <b>${targetEn.charAt(0)}...</b>)</span>`;
                     inputEl.value = ''; inputEl.focus();
                     return; 
                 }
 
                 inputEl.disabled = true; document.getElementById('tdSubmitBtn').style.display = 'none'; fbArea.style.display = 'block';
-                fbArea.className = 'test-feedback feedback-incorrect'; fbArea.innerHTML = `❌ 틀렸습니다!<br><span style="font-size:14px; color:#555;">정답:</span> ${q.wordRef.en}<br><span style="font-size:13px;">(5분 뒤에 다시 복습합니다)</span>`;
+                fbArea.className = 'test-feedback feedback-incorrect'; fbArea.innerHTML = `<span class="material-symbols-outlined">cancel</span> 틀렸습니다!<br><span style="font-size:14px; color:var(--text-secondary); opacity:0.8;">정답:</span> ${q.wordRef.en}<br><span style="font-size:13px;">(5분 뒤에 다시 복습합니다)</span>`;
                 updateSRS(q.wordRef, false); tdStats.incorrect++;
-                document.getElementById('tdNextBtn').style.display = 'block'; tdIsWaitingForNext = true; document.getElementById('tdNextBtn').focus();
+                document.getElementById('tdNextBtn').style.display = 'flex'; tdIsWaitingForNext = true; document.getElementById('tdNextBtn').focus();
             }
         } else {
             inputEl.disabled = true; document.getElementById('tdSubmitBtn').style.display = 'none'; fbArea.style.display = 'block';
             inputEl.style.display = 'none';
             fbArea.className = 'test-feedback feedback-selfval';
-            fbArea.innerHTML = `<span style="font-size:14px; color:#7f8c8d;">내 답안:</span> <b style="color:#e67e22;">${document.getElementById('tdAnswerInput').value}</b><br><br><span style="font-size:14px; color:#7f8c8d;">실제 뜻:</span> <b>${q.wordRef.ko}</b>`;
+            fbArea.innerHTML = `<span style="font-size:14px; color:var(--text-secondary);">내 답안:</span> <b style="color:var(--warning-color);">${document.getElementById('tdAnswerInput').value}</b><br><br><span style="font-size:14px; color:var(--text-secondary);">실제 뜻:</span> <b style="color:var(--text-primary);">${q.wordRef.ko}</b>`;
             document.getElementById('tdSelfEvalBtns').style.display = 'flex';
         }
     }
@@ -1445,12 +1593,12 @@ ${JSON.stringify(wordList)}`;
         }
 
         renderWorksheet(enToKoQuestions, koToEnQuestions, finalTitle);
-        document.getElementById('printBtn').style.display = 'block'; 
+        document.getElementById('printBtn').style.display = 'flex'; 
     }
 
     function renderWorksheet(enToKo, koToEn, title) {
         const output = document.getElementById('worksheetOutput');
-        let html = '<div id="pdf-content" style="background: white;">';
+        let html = '<div id="pdf-content" class="pdf-wrapper">';
         html += `<h2 style="text-align:center; margin: 5px 0 20px 0;">${title}</h2>`;
         let globalQNum = 1; let globalAnsNum = 1; 
         let answerHtml = '<div class="answer-key"><h2 style="text-align:center; margin-top: 0;">✅ 정답지</h2>';

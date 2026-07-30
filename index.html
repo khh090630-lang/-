@@ -60,7 +60,7 @@
             margin: 0; 
             padding: 0;
             height: 100vh;
-            height: 100dvh; 
+            height: 100dvh; /* 모바일 키보드 대응을 위한 동적 높이 적용 */
             overflow: hidden; 
             display: flex;
             transition: background 0.3s, color 0.3s;
@@ -242,48 +242,19 @@
         .status-unk { background: var(--danger-bg); color: var(--danger-color); }
         .status-none { background: rgba(128,128,128,0.1); color: var(--text-secondary); }
 
-        .test-card { width: 100%; max-width: 500px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 30px 20px; text-align: center; box-shadow: var(--shadow); margin: 10px auto; min-height: 250px; display: flex; flex-direction: column; justify-content: center;}
+        /* 박스 사이징(box-sizing)을 추가하여 패딩이 너비에 포함되도록 강제 */
+        .test-card { width: 100%; max-width: 500px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 30px 20px; text-align: center; box-shadow: var(--shadow); margin: 10px auto; min-height: 250px; display: flex; flex-direction: column; justify-content: center; box-sizing: border-box; }
         .test-question-type { font-size: 13px; color: var(--accent-blue); font-weight: bold; margin-bottom: 10px; letter-spacing: 1px;}
-        .test-question-text { font-size: 28px; font-weight: bold; color: var(--text-primary); margin-bottom: 25px; word-break: keep-all; line-height: 1.4;}
-        .test-input { font-size: 20px; text-align: center; padding: 16px; border: 2px solid var(--border-color); border-radius: 12px; width: 100%; margin-bottom: 15px; background: var(--bg-color); color: var(--text-primary); }
+        
+        /* 텍스트 삐져나옴 방지를 위한 overflow-wrap 추가 */
+        .test-question-text { font-size: 28px; font-weight: bold; color: var(--text-primary); margin-bottom: 25px; word-break: keep-all; overflow-wrap: break-word; word-wrap: break-word; line-height: 1.4; width: 100%; box-sizing: border-box; }
+        
+        .test-input { font-size: 20px; text-align: center; padding: 16px; border: 2px solid var(--border-color); border-radius: 12px; width: 100%; margin-bottom: 15px; background: var(--bg-color); color: var(--text-primary); box-sizing: border-box; }
         
         .test-feedback { margin-top: 15px; padding: 18px; border-radius: 12px; font-weight: 500; display: none; font-size: 16px; line-height: 1.5; }
         .feedback-correct { background: var(--success-bg); color: var(--success-color); border: 1px solid rgba(129, 201, 149, 0.3); }
         .feedback-incorrect { background: var(--danger-bg); color: var(--danger-color); border: 1px solid rgba(242, 139, 130, 0.3); }
         .feedback-selfval { background: var(--warning-bg); color: var(--warning-color); border: 1px solid rgba(253, 214, 99, 0.3); }
-
-        /* 커스텀 가상 키보드 UI */
-        .virtual-keyboard {
-            display: none;
-            position: fixed;
-            bottom: 0; left: 0; width: 100%;
-            background: var(--sidebar-bg);
-            padding: 10px 5px 25px 5px;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
-            z-index: 1500;
-            border-top: 1px solid var(--border-color);
-            box-sizing: border-box;
-        }
-        .vk-row { display: flex; justify-content: center; gap: 6px; margin-bottom: 8px; }
-        .vk-key {
-            background: var(--card-bg);
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 14px 10px;
-            flex: 1;
-            max-width: 45px;
-            text-align: center;
-            cursor: pointer;
-            font-size: 18px;
-            font-weight: 500;
-            user-select: none;
-            box-shadow: 0 2px 0 var(--border-color);
-            transition: transform 0.1s, background 0.1s;
-        }
-        .vk-key:active { transform: translateY(2px); box-shadow: none; background: var(--card-hover); }
-        .vk-key.special { max-width: none; flex: 1.5; background: var(--card-hover); font-size: 15px; }
-        .vk-key.enter { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); box-shadow: 0 2px 0 #2980b9; }
 
         /* 학습지 출력 UI (강제 라이트모드) */
         .worksheet-output { margin-top: 30px; border-top: 1px solid var(--border-color); padding-top: 30px; color: #000; }
@@ -306,7 +277,10 @@
             .main-content { padding: 20px 15px; }
             .top-navbar { padding: 12px 20px; }
             .dash-number { font-size: 32px; }
-            .vk-key { padding: 12px 5px; font-size: 16px; max-width: 35px; }
+            
+            /* 모바일에서 텍스트 크기 자동 축소를 위한 조정 */
+            .test-card { padding: 25px 15px; width: 100%; box-sizing: border-box; }
+            .test-question-text { font-size: 22px; margin-bottom: 20px; }
         }
     </style>
 </head>
@@ -541,8 +515,7 @@
                         <div id="otQuestionType" class="test-question-type"></div>
                         <div id="otQuestionText" class="test-question-text"></div>
                         
-                        <!-- 모바일 키보드 방지를 위해 inputmode="none" 추가 -->
-                        <input type="text" id="otAnswerInput" class="test-input" placeholder="정답을 입력하세요" autocomplete="off" inputmode="none" onfocus="showVirtualKeyboard('otAnswerInput')" onblur="hideVirtualKeyboardDelay()" onkeydown="handleGlobalKeyDown(event)">
+                        <input type="text" id="otAnswerInput" class="test-input" placeholder="정답을 입력하세요" autocomplete="off" onkeypress="handleOtKeyPress(event)">
                         
                         <button class="action-btn" id="otSubmitBtn" onclick="submitOtAnswer()">제출하기 (Enter)</button>
 
@@ -605,8 +578,7 @@
                         <div id="tdQuestionType" class="test-question-type"></div>
                         <div id="tdQuestionText" class="test-question-text"></div>
                         
-                        <!-- 모바일 키보드 방지용 inputmode="none" -->
-                        <input type="text" id="tdAnswerInput" class="test-input" placeholder="정답을 입력하세요" autocomplete="off" inputmode="none" onfocus="showVirtualKeyboard('tdAnswerInput')" onblur="hideVirtualKeyboardDelay()" onkeydown="handleGlobalKeyDown(event)">
+                        <input type="text" id="tdAnswerInput" class="test-input" placeholder="정답을 입력하세요" autocomplete="off" onkeypress="handleTdKeyPress(event)">
                         
                         <button class="action-btn" id="tdSubmitBtn" onclick="submitTdAnswer()">제출하기 (Enter)</button>
                         <div id="tdFeedbackArea" class="test-feedback"></div>
@@ -668,52 +640,6 @@
             </div>
         </div>
     </main>
-</div>
-
-<!-- 내장 가상 영문 키보드 -->
-<div id="virtualKeyboard" class="virtual-keyboard" onmousedown="event.preventDefault()">
-    <div style="text-align: right; padding-right: 15px; margin-bottom: 5px;">
-        <button onclick="switchToNativeKeyboard()" style="background:transparent; border:none; color:var(--accent-blue); font-weight:bold; cursor:pointer; font-size:13px; display:inline-flex; align-items:center; gap:4px;"><span class="material-symbols-outlined" style="font-size:16px;">language</span>기본 키보드로 전환 (한글 등)</button>
-        <button onclick="forceHideVirtualKeyboard()" style="background:transparent; border:none; color:var(--text-secondary); cursor:pointer; font-size:13px; margin-left:15px;">닫기 ✕</button>
-    </div>
-    <div class="vk-row">
-        <div class="vk-key" onclick="vkType('q')">q</div>
-        <div class="vk-key" onclick="vkType('w')">w</div>
-        <div class="vk-key" onclick="vkType('e')">e</div>
-        <div class="vk-key" onclick="vkType('r')">r</div>
-        <div class="vk-key" onclick="vkType('t')">t</div>
-        <div class="vk-key" onclick="vkType('y')">y</div>
-        <div class="vk-key" onclick="vkType('u')">u</div>
-        <div class="vk-key" onclick="vkType('i')">i</div>
-        <div class="vk-key" onclick="vkType('o')">o</div>
-        <div class="vk-key" onclick="vkType('p')">p</div>
-    </div>
-    <div class="vk-row">
-        <div class="vk-key" onclick="vkType('a')">a</div>
-        <div class="vk-key" onclick="vkType('s')">s</div>
-        <div class="vk-key" onclick="vkType('d')">d</div>
-        <div class="vk-key" onclick="vkType('f')">f</div>
-        <div class="vk-key" onclick="vkType('g')">g</div>
-        <div class="vk-key" onclick="vkType('h')">h</div>
-        <div class="vk-key" onclick="vkType('j')">j</div>
-        <div class="vk-key" onclick="vkType('k')">k</div>
-        <div class="vk-key" onclick="vkType('l')">l</div>
-    </div>
-    <div class="vk-row">
-        <div class="vk-key" onclick="vkType('-')">-</div>
-        <div class="vk-key" onclick="vkType('z')">z</div>
-        <div class="vk-key" onclick="vkType('x')">x</div>
-        <div class="vk-key" onclick="vkType('c')">c</div>
-        <div class="vk-key" onclick="vkType('v')">v</div>
-        <div class="vk-key" onclick="vkType('b')">b</div>
-        <div class="vk-key" onclick="vkType('n')">n</div>
-        <div class="vk-key" onclick="vkType('m')">m</div>
-        <div class="vk-key special" onclick="vkBackspace()"><span class="material-symbols-outlined">backspace</span></div>
-    </div>
-    <div class="vk-row">
-        <div class="vk-key special" style="flex: 2;" onclick="vkType(' ')">Space</div>
-        <div class="vk-key enter" style="flex: 1.5;" onclick="vkEnter()">Enter ↵</div>
-    </div>
 </div>
 
 <!-- 개별 단어장 폴더 모달 -->
@@ -932,92 +858,22 @@ ${JSON.stringify(wordList)}`;
         else alert('키를 입력해주세요.');
     }
 
-    // ----------------- 가상 키보드 제어 ----------------- //
-    let activeInputId = null;
-    let hideVkTimeout = null;
-    let allowNativeKeyboard = false;
-
-    function showVirtualKeyboard(inputId) {
-        activeInputId = inputId;
-        const inputEl = document.getElementById(inputId);
-        if(!inputEl) return;
-        
-        if(allowNativeKeyboard) {
-            inputEl.removeAttribute('inputmode'); // 네이티브 키보드 허용
-            document.getElementById('virtualKeyboard').style.display = 'none';
-        } else {
-            inputEl.setAttribute('inputmode', 'none'); // 모바일 기본 키보드 차단
-            document.getElementById('virtualKeyboard').style.display = 'block';
-            
-            // 키보드에 가려지지 않게 약간 위로 스크롤
-            setTimeout(() => {
-                const mainArea = document.getElementById('mainContentArea');
-                mainArea.scrollTop = mainArea.scrollHeight;
-            }, 100);
-        }
-    }
-
-    function hideVirtualKeyboardDelay() {
-        // 버튼 클릭 등으로 blur가 발생할 때 즉시 사라지는 것 방지
-        hideVkTimeout = setTimeout(() => {
-            document.getElementById('virtualKeyboard').style.display = 'none';
-            activeInputId = null;
-        }, 150);
-    }
-
-    function forceHideVirtualKeyboard() {
-        document.getElementById('virtualKeyboard').style.display = 'none';
-        activeInputId = null;
-        if(activeInputId) document.getElementById(activeInputId).blur();
-    }
-
-    function switchToNativeKeyboard() {
-        allowNativeKeyboard = true;
-        document.getElementById('virtualKeyboard').style.display = 'none';
-        if(activeInputId) {
-            const input = document.getElementById(activeInputId);
-            input.removeAttribute('inputmode');
-            input.blur();
-            setTimeout(() => input.focus(), 50); // 포커스를 다시 줘서 네이티브 띄움
-        }
-    }
-
-    function vkType(char) {
-        if(hideVkTimeout) clearTimeout(hideVkTimeout); // 숨김 취소
-        if(!activeInputId) return;
-        const input = document.getElementById(activeInputId);
-        input.value += char;
-        input.focus(); // 포커스 유지
-    }
-
-    function vkBackspace() {
-        if(hideVkTimeout) clearTimeout(hideVkTimeout);
-        if(!activeInputId) return;
-        const input = document.getElementById(activeInputId);
-        input.value = input.value.slice(0, -1);
-        input.focus();
-    }
-
-    function vkEnter() {
-        if(hideVkTimeout) clearTimeout(hideVkTimeout);
-        if(!activeInputId) return;
-        if(activeInputId === 'otAnswerInput') {
-            if(otIsWaitingForNext) nextOtQuestion(); else submitOtAnswer();
-        } else if(activeInputId === 'tdAnswerInput') {
-            if(tdIsWaitingForNext) nextTdQuestion(); else submitTdAnswer();
-        }
-    }
-
-    // 물리 키보드 사용을 위한 글로벌 키 이벤트 
-    function handleGlobalKeyDown(e) {
+    // 테스트 엔터키 처리
+    function handleOtKeyPress(e) {
         if(e.key === 'Enter') {
-            e.preventDefault();
-            if(e.target.id === 'otAnswerInput') { if(otIsWaitingForNext) nextOtQuestion(); else submitOtAnswer(); }
-            else if(e.target.id === 'tdAnswerInput') { if(tdIsWaitingForNext) nextTdQuestion(); else submitTdAnswer(); }
+            if(otIsWaitingForNext) nextOtQuestion();
+            else if(document.getElementById('otSubmitBtn').style.display !== 'none') submitOtAnswer();
         }
     }
 
-    // ----------------- 플래시카드 단축키 제어 ----------------- //
+    function handleTdKeyPress(e) {
+        if(e.key === 'Enter') {
+            if(tdIsWaitingForNext) nextTdQuestion();
+            else if(document.getElementById('tdSubmitBtn').style.display !== 'none') submitTdAnswer();
+        }
+    }
+
+    // 플래시카드 단축키 제어
     document.addEventListener('keydown', function(e) {
         const fcArea = document.getElementById('fcArea');
         if (fcArea && fcArea.style.display !== 'none') {
@@ -1075,9 +931,6 @@ ${JSON.stringify(wordList)}`;
         document.getElementById(tabId).classList.add('active');
         event.currentTarget.classList.add('active');
         
-        forceHideVirtualKeyboard(); // 탭 이동시 키보드 숨김
-        allowNativeKeyboard = false; // 키보드 상태 초기화
-
         // 모바일 환경에서 탭 선택시 자동으로 사이드바 닫기
         if(window.innerWidth <= 768) { document.getElementById('sidebar').classList.add('collapsed'); }
 
@@ -1480,7 +1333,10 @@ ${JSON.stringify(wordList)}`;
 
         if (q.type === 'koToEn') {
             document.getElementById('otQuestionType').innerText = "빈칸에 들어갈 영단어를 적으세요";
-            if (q.aiData) { qtEl.innerHTML = `<div style="font-size:28px; color:var(--text-primary); margin-bottom:12px; line-height:1.4;">${q.aiData.en}</div><div style="font-size:18px; color:var(--text-secondary); font-weight:normal;">(${q.aiData.ko})</div>`; } 
+            if (q.aiData) { 
+                // 인라인 font-size 제거 및 반응형 상속 설정
+                qtEl.innerHTML = `<div style="margin-bottom:10px; line-height:1.4; word-wrap: break-word;">${q.aiData.en}</div><div style="font-size:0.65em; color:var(--text-secondary); font-weight:normal; word-wrap: break-word;">(${q.aiData.ko})</div>`; 
+            } 
             else { document.getElementById('otQuestionType').innerText = "다음 뜻을 가진 영단어를 쓰세요"; qtEl.innerText = q.wordRef.ko; }
         } else {
             document.getElementById('otQuestionType').innerText = "영단어를 보고 뜻을 적으세요"; qtEl.innerText = q.wordRef.en; speakWord(q.wordRef.en);
@@ -1488,7 +1344,7 @@ ${JSON.stringify(wordList)}`;
 
         inputEl.disabled = false; inputEl.style.display = 'block'; 
         submitBtn.style.display = 'flex';
-        allowNativeKeyboard = false; // 기본은 가상키보드로
+        inputEl.focus();
     }
 
     function submitOtAnswer() {
@@ -1503,7 +1359,7 @@ ${JSON.stringify(wordList)}`;
                 inputEl.disabled = true; document.getElementById('otSubmitBtn').style.display = 'none'; fbArea.style.display = 'block';
                 fbArea.className = 'test-feedback feedback-correct'; fbArea.innerHTML = '<span class="material-symbols-outlined">check_circle</span> 정답입니다!';
                 updateSRS(q.wordRef, true); otStats.correct++; speakWord(q.wordRef.en); 
-                document.getElementById('otNextBtn').style.display = 'flex'; otIsWaitingForNext = true; forceHideVirtualKeyboard();
+                document.getElementById('otNextBtn').style.display = 'flex'; otIsWaitingForNext = true; document.getElementById('otNextBtn').focus();
             } else {
                 if (checkSynonym(userAnsLower, q)) {
                     fbArea.style.display = 'block'; fbArea.className = 'test-feedback feedback-selfval';
@@ -1513,20 +1369,20 @@ ${JSON.stringify(wordList)}`;
                 inputEl.disabled = true; document.getElementById('otSubmitBtn').style.display = 'none'; fbArea.style.display = 'block';
                 fbArea.className = 'test-feedback feedback-incorrect'; fbArea.innerHTML = `<span class="material-symbols-outlined">cancel</span> 틀렸습니다!<br><span style="font-size:14px; color:var(--text-secondary); opacity:0.8;">정답:</span> ${q.wordRef.en}`;
                 updateSRS(q.wordRef, false); otStats.incorrect++;
-                document.getElementById('otNextBtn').style.display = 'flex'; otIsWaitingForNext = true; forceHideVirtualKeyboard();
+                document.getElementById('otNextBtn').style.display = 'flex'; otIsWaitingForNext = true; document.getElementById('otNextBtn').focus();
             }
         } else {
             inputEl.disabled = true; document.getElementById('otSubmitBtn').style.display = 'none'; fbArea.style.display = 'block'; inputEl.style.display = 'none';
             fbArea.className = 'test-feedback feedback-selfval';
             fbArea.innerHTML = `<span style="font-size:14px; color:var(--text-secondary);">내 답안:</span> <b style="color:var(--warning-color);">${document.getElementById('otAnswerInput').value}</b><br><br><span style="font-size:14px; color:var(--text-secondary);">실제 뜻:</span> <b style="color:var(--text-primary);">${q.wordRef.ko}</b>`;
-            document.getElementById('otSelfEvalBtns').style.display = 'flex'; forceHideVirtualKeyboard();
+            document.getElementById('otSelfEvalBtns').style.display = 'flex'; 
         }
     }
 
     function processOtResult(isCorrect) { const q = testQuestions[currentTestIdx]; updateSRS(q.wordRef, isCorrect); if(isCorrect) otStats.correct++; else otStats.incorrect++; nextOtQuestion(); }
     function nextOtQuestion() { currentTestIdx++; renderOtQuestion(); }
     function finishTestUi() { saveDB(); document.getElementById('otArea').style.display = 'none'; document.getElementById('otResultArea').style.display = 'block'; document.getElementById('otResCorrect').innerText = otStats.correct; document.getElementById('otResIncorrect').innerText = otStats.incorrect; }
-    function quitOnlineTest() { if(confirm('포기하시겠습니까? 지금까지 푼 결과만 저장됩니다.')){ saveDB(); document.getElementById('otArea').style.display = 'none'; document.getElementById('otSetupArea').style.display = 'block'; forceHideVirtualKeyboard(); } }
+    function quitOnlineTest() { if(confirm('포기하시겠습니까? 지금까지 푼 결과만 저장됩니다.')){ saveDB(); document.getElementById('otArea').style.display = 'none'; document.getElementById('otSetupArea').style.display = 'block';  } }
     function finishOnlineTest() { document.getElementById('otResultArea').style.display = 'none'; document.getElementById('otSetupArea').style.display = 'block'; }
 
     // ----------------- 오늘의 학습 로직 ----------------- //
@@ -1582,7 +1438,10 @@ ${JSON.stringify(wordList)}`;
 
         if (q.type === 'koToEn') {
             document.getElementById('tdQuestionType').innerText = "빈칸에 들어갈 영단어를 적으세요";
-            if (q.aiData) { qtEl.innerHTML = `<div style="font-size:28px; color:var(--text-primary); margin-bottom:12px; line-height:1.4;">${q.aiData.en}</div><div style="font-size:18px; color:var(--text-secondary); font-weight:normal;">(${q.aiData.ko})</div>`; } 
+            if (q.aiData) { 
+                // 인라인 font-size 제거 및 반응형 상속 설정
+                qtEl.innerHTML = `<div style="margin-bottom:10px; line-height:1.4; word-wrap: break-word;">${q.aiData.en}</div><div style="font-size:0.65em; color:var(--text-secondary); font-weight:normal; word-wrap: break-word;">(${q.aiData.ko})</div>`; 
+            } 
             else { document.getElementById('tdQuestionType').innerText = "다음 뜻을 가진 영단어를 적으세요"; qtEl.innerText = q.wordRef.ko; }
         } else {
             document.getElementById('tdQuestionType').innerText = "영단어를 보고 뜻을 적으세요"; qtEl.innerText = q.wordRef.en; speakWord(q.wordRef.en); 
@@ -1590,7 +1449,7 @@ ${JSON.stringify(wordList)}`;
 
         inputEl.disabled = false; inputEl.style.display = 'block'; 
         submitBtn.style.display = 'flex';
-        allowNativeKeyboard = false;
+        inputEl.focus();
     }
 
     function submitTdAnswer() {
@@ -1605,7 +1464,7 @@ ${JSON.stringify(wordList)}`;
                 inputEl.disabled = true; document.getElementById('tdSubmitBtn').style.display = 'none'; fbArea.style.display = 'block';
                 fbArea.className = 'test-feedback feedback-correct'; fbArea.innerHTML = '<span class="material-symbols-outlined">check_circle</span> 정답입니다! 복습 주기가 늘어납니다.';
                 updateSRS(q.wordRef, true); tdStats.correct++; speakWord(q.wordRef.en); 
-                document.getElementById('tdNextBtn').style.display = 'flex'; tdIsWaitingForNext = true; forceHideVirtualKeyboard();
+                document.getElementById('tdNextBtn').style.display = 'flex'; tdIsWaitingForNext = true; document.getElementById('tdNextBtn').focus();
             } else {
                 if (checkSynonym(userAnsLower, q)) {
                     fbArea.style.display = 'block'; fbArea.className = 'test-feedback feedback-selfval';
@@ -1615,20 +1474,20 @@ ${JSON.stringify(wordList)}`;
                 inputEl.disabled = true; document.getElementById('tdSubmitBtn').style.display = 'none'; fbArea.style.display = 'block';
                 fbArea.className = 'test-feedback feedback-incorrect'; fbArea.innerHTML = `<span class="material-symbols-outlined">cancel</span> 틀렸습니다!<br><span style="font-size:14px; color:var(--text-secondary); opacity:0.8;">정답:</span> ${q.wordRef.en}<br><span style="font-size:13px;">(5분 뒤에 다시 복습합니다)</span>`;
                 updateSRS(q.wordRef, false); tdStats.incorrect++;
-                document.getElementById('tdNextBtn').style.display = 'flex'; tdIsWaitingForNext = true; forceHideVirtualKeyboard();
+                document.getElementById('tdNextBtn').style.display = 'flex'; tdIsWaitingForNext = true; document.getElementById('tdNextBtn').focus();
             }
         } else {
             inputEl.disabled = true; document.getElementById('tdSubmitBtn').style.display = 'none'; fbArea.style.display = 'block'; inputEl.style.display = 'none';
             fbArea.className = 'test-feedback feedback-selfval';
             fbArea.innerHTML = `<span style="font-size:14px; color:var(--text-secondary);">내 답안:</span> <b style="color:var(--warning-color);">${document.getElementById('tdAnswerInput').value}</b><br><br><span style="font-size:14px; color:var(--text-secondary);">실제 뜻:</span> <b style="color:var(--text-primary);">${q.wordRef.ko}</b>`;
-            document.getElementById('tdSelfEvalBtns').style.display = 'flex'; forceHideVirtualKeyboard();
+            document.getElementById('tdSelfEvalBtns').style.display = 'flex'; 
         }
     }
 
     function processTdResult(isCorrect) { const q = tdQuestions[currentTdIdx]; updateSRS(q.wordRef, isCorrect); if(isCorrect) tdStats.correct++; else tdStats.incorrect++; nextTdQuestion(); }
     function nextTdQuestion() { currentTdIdx++; renderTdQuestion(); }
     function finishTdUi() { saveDB(); document.getElementById('tdArea').style.display = 'none'; document.getElementById('tdResultArea').style.display = 'block'; }
-    function quitTodayTest() { if(confirm('포기하시겠습니까? 푼 결과만 반영됩니다.')){ saveDB(); document.getElementById('tdArea').style.display = 'none'; document.getElementById('tdSetupArea').style.display = 'block'; renderTodaySetup(); forceHideVirtualKeyboard(); } }
+    function quitTodayTest() { if(confirm('포기하시겠습니까? 푼 결과만 반영됩니다.')){ saveDB(); document.getElementById('tdArea').style.display = 'none'; document.getElementById('tdSetupArea').style.display = 'block'; renderTodaySetup();  } }
     function finishTodayTest() { document.getElementById('tdResultArea').style.display = 'none'; switchTab('homeTab'); }
 
     // ----------------- 학습지(PDF) 생성 로직 ----------------- //
